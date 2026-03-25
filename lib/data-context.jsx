@@ -16,30 +16,6 @@ const initialConsultations = [
     date: "2024-01-15",
     type: "consultation"
   },
-  {
-    id: "CON-002",
-    fullName: "Siti Rahayu",
-    position: "Kepala Seksi",
-    workUnit: "Dinas Kesehatan",
-    phone: "082345678901",
-    topic: "Konsultasi terkait regulasi pengadaan barang dan jasa untuk unit kerja.",
-    documents: ["Dokumen_Pendukung.docx", "Lampiran_Data.xlsx"],
-    status: "in-review",
-    date: "2024-01-14",
-    type: "consultation"
-  },
-  {
-    id: "CON-003",
-    fullName: "Budi Santoso",
-    position: "Analis Kebijakan",
-    workUnit: "Bappeda",
-    phone: "083456789012",
-    topic: "Klarifikasi mengenai mekanisme mutasi pegawai antar instansi.",
-    documents: [],
-    status: "completed",
-    date: "2024-01-10",
-    type: "consultation"
-  }
 ]
 
 const initialViolationReports = [
@@ -57,34 +33,6 @@ const initialViolationReports = [
     date: "2024-01-16",
     type: "violation"
   },
-  {
-    id: "VIO-002",
-    reporterName: "Rini Susanti",
-    reportedName: "Hendra Gunawan",
-    nip: "197803221998031002",
-    position: "Kepala Bagian",
-    workUnit: "Sekretariat Daerah",
-    violationType: "Penyalahgunaan Wewenang",
-    description: "Diduga melakukan penyalahgunaan wewenang dalam proses pengadaan barang inventaris kantor.",
-    documents: ["Laporan_Investigasi.pdf"],
-    status: "followed-up",
-    date: "2024-01-12",
-    type: "violation"
-  },
-  {
-    id: "VIO-003",
-    reporterName: "Agus Pramono",
-    reportedName: "Sri Wahyuni",
-    nip: "199001102015012003",
-    position: "Staff Pelayanan",
-    workUnit: "Dinas Kependudukan",
-    violationType: "Pelanggaran Etika",
-    description: "Bersikap tidak sopan kepada masyarakat yang melakukan pelayanan administrasi.",
-    documents: ["Bukti_CCTV.mp4", "Pernyataan_Saksi.pdf"],
-    status: "completed",
-    date: "2024-01-08",
-    type: "violation"
-  }
 ]
 
 const initialFollowUps = [

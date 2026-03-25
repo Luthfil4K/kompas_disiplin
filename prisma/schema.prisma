@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:@localhost:3306/db_kompas_disiplin"
+}
+
+model tbl_user {
+  id              String   @id @default(uuid())
+  nip             String   @unique
+  name            String
+  email           String   @unique
+  password        String
+  role            Role
+  createdAt       DateTime @default(now())
+
+  actions         tbl_follow_up[]
+}
+
+enum Role {
+  ADMIN
+  KABAG_TU
+  KAPROV
+  KABKO_KATIM
+}
+
+model tbl_work_unit {
+  id              String              @id @default(uuid())
+  name            String
+
+  consultations   tbl_consultation[]
+  violations      tbl_violation_report[]
+}
+
+model tbl_consultation {
+  id              String              @id @default(uuid())
+  name            String
+  position        String
+  phone           String
+  topic           String
+  linkFile        String?
+
+  workUnitId      String
+  workUnit        tbl_work_unit       @relation(fields: [workUnitId], references: [id])
+
+  status          ReportStatus        @default(SUBMITTED)
+
+  createdAt       DateTime            @default(now())
+
+  followUps       tbl_follow_up[]
+}
+
+model tbl_violation_report {
+  id               String              @id @default(uuid())
+
+  reporterName     String
+
+  reportedName     String
+  reportedNip      String
+  reportedPosition String
+
+  violationTypeId  String
+  violationType    tbl_violation_type  @relation(fields: [violationTypeId], references: [id])
+  linkFile         String?
+  violationDesc    String?
+  
+  workUnitId       String
+  workUnit         tbl_work_unit       @relation(fields: [workUnitId], references: [id])
+
+  status           ReportStatus        @default(SUBMITTED)
+
+  createdAt        DateTime            @default(now())
+
+  followUps        tbl_follow_up[]
+}
+
+model tbl_violation_type {
+  id              String              @id @default(uuid())
+  name            String
+
+  reports         tbl_violation_report[]
+}
+
+
+
+model tbl_follow_up {
+  id              String              @id @default(uuid())
+  notes           String?
+
+  consultationId  String?
+  consultation    tbl_consultation?       @relation(fields: [consultationId], references: [id])
+
+  violationId     String?
+  violation       tbl_violation_report?    @relation(fields: [violationId], references: [id])
+  linkFile        String?
+  userId          String
+  user            tbl_user                @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime            @default(now())
+}
+
+enum ReportStatus {
+  SUBMITTED
+  IN_REVIEW
+  FOLLOWED_UP
+  COMPLETED
+}
