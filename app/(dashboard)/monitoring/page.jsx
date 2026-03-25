@@ -1,152 +1,258 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Eye, Search, Filter, Upload, FileText, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
+import { useState, useMemo, useEffect } from "react";
+import { Eye, Search, Filter, Upload, FileText, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from "@/components/ui/table"
+  TableRow,
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog"
-import { useData } from "@/lib/data-context"
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useData } from "@/lib/data-context";
 
+import { getAllDiscipline } from "../../services/getServices";
+import { getAllConsultation } from "../../services/getServices";
 const statusConfig = {
-  submitted: { label: "Submitted", variant: "secondary" },
-  "in-review": { label: "In Review", variant: "default" },
-  "followed-up": { label: "Followed Up", variant: "outline" },
-  completed: { label: "Completed", variant: "default" }
-}
+  SUBMITTED: { label: "Submitted", variant: "secondary" },
+  IN_REVIEW: { label: "In Review", variant: "default" },
+  FOLLOWED_UP: { label: "Followed Up", variant: "outline" },
+  COMPLETED: { label: "Completed", variant: "default" },
+};
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 10;
+
+const formatDateWITA = (dateString) => {
+  const date = new Date(dateString);
+
+  const options = {
+    timeZone: "Asia/Makassar",
+  };
+
+  const d = new Date(date.toLocaleString("en-US", options));
+
+  const day = d.getDate();
+  const month = d.getMonth() + 1;
+  const year = d.getFullYear();
+
+  const hours = d.getHours().toString().padStart(2, "0");
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
 
 export default function MonitoringPage() {
-  const { getAllReports, updateReportStatus, addFollowUp } = useData()
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [workUnitFilter, setWorkUnitFilter] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedReport, setSelectedReport] = useState(null)
-  const [followUpModal, setFollowUpModal] = useState(false)
-  const [statusModal, setStatusModal] = useState(false)
-  const [followUpData, setFollowUpData] = useState({ notes: "", documents: [] })
-  const [newStatus, setNewStatus] = useState("")
+  const { getAllReports, updateReportStatus, addFollowUp } = useData();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [workUnitFilter, setWorkUnitFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [followUpModal, setFollowUpModal] = useState(false);
+  const [statusModal, setStatusModal] = useState(false);
+  const [followUpData, setFollowUpData] = useState({
+    notes: "",
+    linkFile:"" ,
+  });
+  const [newStatus, setNewStatus] = useState("");
 
-  const allReports = getAllReports()
+  const [dataConsultation, setDataConsultation] = useState();
+  const [dataViolation, setDataViolation] = useState();
+  const [allData,setAllData] = useState()
+
+  const allReports = getAllReports();
+
+  console.log("allReports");
+  console.log(allReports);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const cons = await getAllConsultation();
+        const vio = await getAllDiscipline();
+
+        setDataConsultation(cons);
+        setDataViolation(vio);
+
+        // 🔹 mapping consultation
+        const mappedCons = cons.map((item) => ({
+          id: item.id,
+          date: item.createdAt,
+          description: item.topic,
+          documents: item.linkFile ? [item.linkFile] : [],
+          nip: '',
+          position: item.position,
+          reportedName: item.name,
+          reporterName: item.name, // atau field lain kalau beda
+          status: item.status || "submitted",
+          type: "consultation",
+          violationType: null,
+          topic:item.topic,
+          workUnit: item.workUnit?.name || item.workUnit,
+        }));
+
+        // 🔹 mapping violation
+        const mappedVio = vio.map((item) => ({
+          id: item.id,
+          date: item.createdAt,
+          description: item.violationDesc,
+          documents: item.linkFile ? [item.linkFile] : [],
+          nip: item.reportedNip,
+          position: item.reportedPosition,
+          reportedName: item.reportedName,
+          reporterName: item.reporterName,
+          topic:item.violationDesc,
+          status: item.status || "submitted",
+          type: "violation",
+          violationType: item.violationType,
+          workUnit: item.workUnit?.name || item.workUnit,
+        }));
+
+        // 🔥 gabungkan
+        const combined = [...mappedCons, ...mappedVio];
+
+        // (opsional) sort by date terbaru
+        combined.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        setAllData(combined);
+
+        console.log("ALL DATA:", combined);
+      } catch (err) {
+        console.error("Gagal mengambil data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const workUnits = useMemo(() => {
-    const units = new Set(allReports.map(r => r.workUnit))
-    return Array.from(units)
-  }, [allReports])
+    const units = new Set(allData?.map((r) => r.workUnit));
+    return Array.from(units);
+  }, [allData]);
 
   const filteredReports = useMemo(() => {
-    return allReports.filter(report => {
-      const searchLower = search.toLowerCase()
-      const matchesSearch = 
-        (report.fullName?.toLowerCase().includes(searchLower)) ||
-        (report.reporterName?.toLowerCase().includes(searchLower)) ||
-        (report.reportedName?.toLowerCase().includes(searchLower)) ||
+    return allData?.filter((report) => {
+      const searchLower = search.toLowerCase();
+      const matchesSearch =
+        report.fullName?.toLowerCase().includes(searchLower) ||
+        report.reporterName?.toLowerCase().includes(searchLower) ||
+        report.reportedName?.toLowerCase().includes(searchLower) ||
         report.workUnit.toLowerCase().includes(searchLower) ||
-        report.id.toLowerCase().includes(searchLower)
+        report.id.toLowerCase().includes(searchLower);
 
-      const matchesStatus = statusFilter === "all" || report.status === statusFilter
-      const matchesWorkUnit = workUnitFilter === "all" || report.workUnit === workUnitFilter
+      const matchesStatus =
+        statusFilter === "all" || report.status === statusFilter;
+      const matchesWorkUnit =
+        workUnitFilter === "all" || report.workUnit === workUnitFilter;
 
-      return matchesSearch && matchesStatus && matchesWorkUnit
-    })
-  }, [allReports, search, statusFilter, workUnitFilter])
+      return matchesSearch && matchesStatus && matchesWorkUnit;
+    });
+  }, [allData, search, statusFilter, workUnitFilter]);
 
-  const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE)
-  const paginatedReports = filteredReports.slice(
+  const totalPages = Math.ceil(filteredReports?.length / ITEMS_PER_PAGE);
+  const paginatedReports = filteredReports?.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  )
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  console.log(dataConsultation);
+  console.log(dataViolation);
 
   const handleViewDetails = (report) => {
-    setSelectedReport(report)
-  }
+    setSelectedReport(report);
+  };
 
   const handleFollowUp = (report) => {
-    setSelectedReport(report)
-    setFollowUpModal(true)
-  }
+    setSelectedReport(report);
+    setFollowUpModal(true);
+  };
 
   const handleChangeStatus = (report) => {
-    setSelectedReport(report)
-    setNewStatus(report.status)
-    setStatusModal(true)
-  }
+    setSelectedReport(report);
+    setNewStatus(report.status);
+    setStatusModal(true);
+  };
 
   const handleFollowUpSubmit = () => {
     if (selectedReport && followUpData.notes) {
       addFollowUp({
         reportId: selectedReport.id,
         notes: followUpData.notes,
-        documents: followUpData.documents.map(f => f.name)
-      })
-      setFollowUpModal(false)
-      setFollowUpData({ notes: "", documents: [] })
-      setSelectedReport(null)
+        documents: followUpData.documents.map((f) => f.name),
+      });
+      setFollowUpModal(false);
+      setFollowUpData({ notes: "", documents: [] });
+      setSelectedReport(null);
     }
-  }
+  };
 
   const handleStatusSubmit = () => {
     if (selectedReport && newStatus) {
-      updateReportStatus(selectedReport.id, newStatus)
-      setStatusModal(false)
-      setSelectedReport(null)
-      setNewStatus("")
+      updateReportStatus(selectedReport.id, newStatus);
+      setStatusModal(false);
+      setSelectedReport(null);
+      setNewStatus("");
     }
-  }
+  };
 
   const handleFollowUpFileChange = (e) => {
-    const newFiles = Array.from(e.target.files)
-    setFollowUpData(prev => ({ 
-      ...prev, 
-      documents: [...prev.documents, ...newFiles] 
-    }))
-  }
+    const newFiles = Array.from(e.target.files);
+    setFollowUpData((prev) => ({
+      ...prev,
+      documents: [...prev.documents, ...newFiles],
+    }));
+  };
 
   const removeFollowUpFile = (index) => {
-    setFollowUpData(prev => ({
+    setFollowUpData((prev) => ({
       ...prev,
-      documents: prev.documents.filter((_, i) => i !== index)
-    }))
-  }
+      documents: prev.documents.filter((_, i) => i !== index),
+    }));
+  };
 
   const getReporterName = (report) => {
-    return report.type === "consultation" ? report.fullName : report.reporterName
-  }
+    return report.type === "consultation"
+      ? report.reporterName
+      : report.reporterName;
+  };
 
   const getSubjectName = (report) => {
-    return report.type === "consultation" ? report.fullName : report.reportedName
-  }
+    return report.type === "consultation"
+      ? report.reporterName
+      : report.reportedName;
+  };
 
   const getTypeLabel = (type) => {
-    return type === "consultation" ? "Consultation" : "Violation Report"
-  }
+    return type === "consultation" ? "Consultation" : "Violation Report";
+  };
 
   return (
     <div>
@@ -155,10 +261,13 @@ export default function MonitoringPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
             <Eye className="h-5 w-5 text-info" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Report Monitoring</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Report Monitoring
+          </h1>
         </div>
         <p className="text-muted-foreground">
-          Monitor and manage all submitted reports. Track status, follow up on cases, and update report statuses.
+          Monitor and manage all submitted reports. Track status, follow up on
+          cases, and update report statuses.
         </p>
       </div>
 
@@ -175,39 +284,47 @@ export default function MonitoringPage() {
                 placeholder="Search by name, ID, or work unit..."
                 value={search}
                 onChange={(e) => {
-                  setSearch(e.target.value)
-                  setCurrentPage(1)
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
                 }}
                 className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={(value) => {
-              setStatusFilter(value)
-              setCurrentPage(1)
-            }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setCurrentPage(1);
+              }}
+            >
               <SelectTrigger className="w-full sm:w-40">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="submitted">Submitted</SelectItem>
-                <SelectItem value="in-review">In Review</SelectItem>
-                <SelectItem value="followed-up">Followed Up</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                <SelectItem value="FOLLOWED-UP">Followed Up</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={workUnitFilter} onValueChange={(value) => {
-              setWorkUnitFilter(value)
-              setCurrentPage(1)
-            }}>
+            <Select
+              value={workUnitFilter}
+              onValueChange={(value) => {
+                setWorkUnitFilter(value);
+                setCurrentPage(1);
+              }}
+            >
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Work Unit" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Work Units</SelectItem>
                 {workUnits.map((unit) => (
-                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                  <SelectItem key={unit} value={unit}>
+                    {unit}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -230,18 +347,29 @@ export default function MonitoringPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedReports.length === 0 ? (
+              {paginatedReports?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="h-24 text-center text-muted-foreground"
+                  >
                     No reports found matching your criteria.
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedReports.map((report) => (
+                paginatedReports?.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell className="font-mono text-sm">{report.date}</TableCell>
+                    <TableCell className="text-sm">
+                      {formatDateWITA(report.date)}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={report.type === "consultation" ? "secondary" : "destructive"}>
+                      <Badge
+                        variant={
+                          report.type === "consultation"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                      >
                         {getTypeLabel(report.type)}
                       </Badge>
                     </TableCell>
@@ -249,14 +377,14 @@ export default function MonitoringPage() {
                     <TableCell>{getSubjectName(report)}</TableCell>
                     <TableCell>{report.workUnit}</TableCell>
                     <TableCell>
-                      <Badge 
+                      <Badge
                         variant={statusConfig[report.status]?.variant}
                         className={
-                          report.status === "completed" 
-                            ? "bg-success text-success-foreground" 
-                            : report.status === "in-review"
-                            ? "bg-warning text-warning-foreground"
-                            : ""
+                          report.status === "COMPLETED"
+                            ? "bg-success text-success-foreground"
+                            : report.status === "IN_REVIEW"
+                              ? "bg-warning text-warning-foreground"
+                              : ""
                         }
                       >
                         {statusConfig[report.status]?.label}
@@ -298,14 +426,16 @@ export default function MonitoringPage() {
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredReports.length)} of {filteredReports.length} reports
+            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+            {Math.min(currentPage * ITEMS_PER_PAGE, filteredReports.length)} of{" "}
+            {filteredReports.length} reports
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => prev - 1)}
+              onClick={() => setCurrentPage((prev) => prev - 1)}
             >
               Previous
             </Button>
@@ -323,7 +453,7 @@ export default function MonitoringPage() {
               variant="outline"
               size="sm"
               disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
             >
               Next
             </Button>
@@ -332,12 +462,18 @@ export default function MonitoringPage() {
       )}
 
       {/* View Details Dialog */}
-      <Dialog open={!!selectedReport && !followUpModal && !statusModal} onOpenChange={() => setSelectedReport(null)}>
+      <Dialog
+        open={!!selectedReport && !followUpModal && !statusModal}
+        onOpenChange={() => setSelectedReport(null)}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Report Details - {selectedReport?.id}</DialogTitle>
             <DialogDescription>
-              {selectedReport?.type === "consultation" ? "Legal Consultation" : "Violation Report"} submitted on {selectedReport?.date}
+              {selectedReport?.type === "consultation"
+                ? "Legal Consultation"
+                : "Violation Report"}{" "}
+              submitted on {formatDateWITA(selectedReport?.date)}
             </DialogDescription>
           </DialogHeader>
           {selectedReport && (
@@ -345,7 +481,9 @@ export default function MonitoringPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-muted-foreground">Reporter</Label>
-                  <p className="font-medium">{getReporterName(selectedReport)}</p>
+                  <p className="font-medium">
+                    {getReporterName(selectedReport)}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Work Unit</Label>
@@ -355,7 +493,9 @@ export default function MonitoringPage() {
               {selectedReport.type === "violation" && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <Label className="text-muted-foreground">Reported Person</Label>
+                    <Label className="text-muted-foreground">
+                      Reported Person
+                    </Label>
                     <p className="font-medium">{selectedReport.reportedName}</p>
                   </div>
                   <div>
@@ -366,28 +506,32 @@ export default function MonitoringPage() {
               )}
               <div>
                 <Label className="text-muted-foreground">
-                  {selectedReport.type === "consultation" ? "Consultation Topic" : "Violation Type"}
+                  {selectedReport.type === "consultation"
+                    ? "Consultation Topic"
+                    : "Violation Type"}
                 </Label>
                 <p className="font-medium">
-                  {selectedReport.type === "consultation" ? selectedReport.topic : selectedReport.violationType}
+                  {selectedReport.type === "consultation"
+                    ? selectedReport.topic
+                    : selectedReport.violationDesc}
                 </p>
               </div>
               {selectedReport.type === "violation" && (
                 <div>
                   <Label className="text-muted-foreground">Description</Label>
-                  <p className="font-medium">{selectedReport.description}</p>
+                  <p className="font-medium">{selectedReport.violationDesc}</p>
                 </div>
               )}
               <div>
                 <Label className="text-muted-foreground">Status</Label>
-                <Badge 
+                <Badge
                   variant={statusConfig[selectedReport.status]?.variant}
                   className={
-                    selectedReport.status === "completed" 
-                      ? "bg-success text-success-foreground" 
-                      : selectedReport.status === "in-review"
-                      ? "bg-warning text-warning-foreground"
-                      : ""
+                    selectedReport.status === "COMPLETED"
+                      ? "bg-success text-success-foreground"
+                      : selectedReport.status === "IN_REVIEW"
+                        ? "bg-warning text-warning-foreground"
+                        : ""
                   }
                 >
                   {statusConfig[selectedReport.status]?.label}
@@ -395,10 +539,15 @@ export default function MonitoringPage() {
               </div>
               {selectedReport.documents?.length > 0 && (
                 <div>
-                  <Label className="text-muted-foreground">Attached Documents</Label>
+                  <Label className="text-muted-foreground">
+                    Attached Documents
+                  </Label>
                   <div className="mt-2 space-y-2">
                     {selectedReport.documents.map((doc, index) => (
-                      <div key={index} className="flex items-center gap-2 rounded-lg bg-muted p-2">
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 rounded-lg bg-muted p-2"
+                      >
                         <FileText className="h-4 w-4 text-primary" />
                         <span className="text-sm">{doc}</span>
                       </div>
@@ -433,49 +582,45 @@ export default function MonitoringPage() {
                 placeholder="Enter follow up notes..."
                 className="min-h-24"
                 value={followUpData.notes}
-                onChange={(e) => setFollowUpData(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setFollowUpData((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
               />
             </div>
             <div className="grid gap-2">
-              <Label>Upload Follow Up Document</Label>
-              <div className="rounded-lg border-2 border-dashed border-border p-4 text-center">
-                <input
-                  type="file"
-                  id="followup-file"
-                  className="hidden"
-                  multiple
-                  onChange={handleFollowUpFileChange}
-                />
-                <label htmlFor="followup-file" className="flex cursor-pointer flex-col items-center gap-2">
-                  <Upload className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Click to upload documents</span>
-                </label>
-              </div>
-              {followUpData.documents.length > 0 && (
-                <div className="space-y-2">
-                  {followUpData.documents.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between rounded-lg bg-muted p-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <span className="text-sm">{file.name}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => removeFollowUpFile(index)}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="linkFile"></Label>
+              <Input
+                id="linkFile"
+                name="linkFile"
+                type="linkFile"
+                placeholder="Inputkan Tautan Dokumen Pendukung"
+                value={followUpData.linkFile}
+                onChange={(e) =>
+                  setFollowUpData((prev) => ({
+                    ...prev,
+                    linkFile: e.target.value,
+                  }))
+                }
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setFollowUpModal(false)
-              setFollowUpData({ notes: "", documents: [] })
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFollowUpModal(false);
+                setFollowUpData({ notes: "", documents: "" });
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleFollowUpSubmit} disabled={!followUpData.notes}>
+            <Button
+              onClick={handleFollowUpSubmit}
+              disabled={!followUpData.notes}
+            >
               Save Follow Up
             </Button>
           </DialogFooter>
@@ -508,18 +653,19 @@ export default function MonitoringPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setStatusModal(false)
-              setNewStatus("")
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStatusModal(false);
+                setNewStatus("");
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleStatusSubmit}>
-              Update Status
-            </Button>
+            <Button onClick={handleStatusSubmit}>Update Status</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

@@ -1,63 +1,63 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Scale, Upload, X, FileText, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { useData } from "@/lib/data-context"
+import { useState } from "react";
+import { Scale, Upload, X, FileText, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { useData } from "@/lib/data-context";
+
+import { postConsultationByKabkoKatim } from "../../services/postServices";
 
 export default function LegalConsultationPage() {
-  const { addConsultation } = useData()
-  const [submitted, setSubmitted] = useState(false)
-  const [files, setFiles] = useState([])
+  const { addConsultation } = useData();
+  const [submitted, setSubmitted] = useState(false);
+  const [files, setFiles] = useState([]);
   const [formData, setFormData] = useState({
+    nip: "3400632811",
     fullName: "",
     position: "",
     workUnit: "",
     phone: "",
-    topic: ""
-  })
+    topic: "",
+    linkFile: "",
+  });
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files)
-    setFiles(prev => [...prev, ...newFiles])
-  }
+  const handleSubmit = async (e) => {
+    console.log(formData);
+    console.log("formData");
+    e.preventDefault();
+    await postConsultationByKabkoKatim(formData);
 
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index))
-  }
+    setSubmitted(true);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    
-    addConsultation({
-      ...formData,
-      documents: files.map(f => f.name)
-    })
-    
-    setSubmitted(true)
-    
     // Reset form after 3 seconds
     setTimeout(() => {
       setFormData({
+        nip: 1,
         fullName: "",
         position: "",
         workUnit: "",
         phone: "",
-        topic: ""
-      })
-      setFiles([])
-      setSubmitted(false)
-    }, 3000)
-  }
+        topic: "",
+      });
+      setFiles([]);
+      setSubmitted(false);
+    }, 3000);
+  };
 
   if (submitted) {
     return (
@@ -67,14 +67,17 @@ export default function LegalConsultationPage() {
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
               <Check className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h2 className="mb-2 text-xl font-semibold text-foreground">Consultation Submitted</h2>
+            <h2 className="mb-2 text-xl font-semibold text-foreground">
+              Consultation Submitted
+            </h2>
             <p className="text-center text-muted-foreground">
-              Your legal consultation request has been submitted successfully. You will be contacted shortly.
+              Your legal consultation request has been submitted successfully.
+              You will be contacted shortly.
             </p>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -84,10 +87,13 @@ export default function LegalConsultationPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <Scale className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Legal Consultation</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Legal Consultation
+          </h1>
         </div>
         <p className="text-muted-foreground">
-          Submit your legal consultation request. Fill in all required fields and attach any supporting documents.
+          Submit your legal consultation request. Fill in all required fields
+          and attach any supporting documents.
         </p>
       </div>
 
@@ -95,7 +101,9 @@ export default function LegalConsultationPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Personal Information</CardTitle>
-            <CardDescription>Please provide your contact details</CardDescription>
+            <CardDescription>
+              Please provide your contact details
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -124,7 +132,7 @@ export default function LegalConsultationPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="workUnit">Work Unit / Department (Satker)</Label>
+                <Label htmlFor="workUnit">Kode (Satker)</Label>
                 <Input
                   id="workUnit"
                   name="workUnit"
@@ -153,7 +161,9 @@ export default function LegalConsultationPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Consultation Details</CardTitle>
-            <CardDescription>Describe your consultation topic in detail</CardDescription>
+            <CardDescription>
+              Describe your consultation topic in detail
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
@@ -173,66 +183,21 @@ export default function LegalConsultationPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Document Upload</CardTitle>
-            <CardDescription>Upload supporting documents (PDF, Word, Excel, Images) - Optional</CardDescription>
+            <CardTitle className="text-lg">Document Pendukung</CardTitle>
+            <CardDescription>
+              Upload supporting documents (PDF, Word, Excel, Images) - Optional
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                multiple
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                onChange={handleFileChange}
-              />
-              <label
-                htmlFor="file-upload"
-                className="flex cursor-pointer flex-col items-center gap-2"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  <Upload className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  Click to upload or drag and drop
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  PDF, DOC, DOCX, XLS, XLSX, PNG, JPG (max 10MB each)
-                </span>
-              </label>
-            </div>
-
-            {files.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <Label>Uploaded Files ({files.length})</Label>
-                <div className="space-y-2">
-                  {files.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between rounded-lg bg-muted p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(file.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <Label htmlFor="linkFile"></Label>
+            <Input
+              id="linkFile"
+              name="linkFile"
+              type="linkFile"
+              placeholder="Inputkan Tautan Dokumen Pendukung"
+              value={formData.linkFile}
+              onChange={handleInputChange}
+            />
           </CardContent>
         </Card>
 
@@ -241,5 +206,5 @@ export default function LegalConsultationPage() {
         </Button>
       </form>
     </div>
-  )
+  );
 }
