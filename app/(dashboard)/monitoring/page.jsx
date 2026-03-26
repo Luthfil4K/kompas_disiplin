@@ -41,6 +41,10 @@ import { useData } from "@/lib/data-context";
 
 import { getAllDiscipline } from "../../services/getServices";
 import { getAllConsultation } from "../../services/getServices";
+import { postFollowUps } from "../../services/postServices"
+import { patchFollowUps } from "../../services/putServices"
+import { patchStatus } from "../../services/putServices";
+
 const statusConfig = {
   SUBMITTED: { label: "Submitted", variant: "secondary" },
   IN_REVIEW: { label: "In Review", variant: "default" },
@@ -90,9 +94,6 @@ export default function MonitoringPage() {
 
   const allReports = getAllReports();
 
-  console.log("allReports");
-  console.log(allReports);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -102,7 +103,7 @@ export default function MonitoringPage() {
         setDataConsultation(cons);
         setDataViolation(vio);
 
-        // 🔹 mapping consultation
+        //  mapping consultation
         const mappedCons = cons.map((item) => ({
           id: item.id,
           date: item.createdAt,
@@ -114,12 +115,14 @@ export default function MonitoringPage() {
           reporterName: item.name, // atau field lain kalau beda
           status: item.status || "submitted",
           type: "consultation",
+          followUps:item.followUps,
           violationType: null,
+          isFollowUp: item.followUps.length > 0 ? "1" : "0",
           topic:item.topic,
           workUnit: item.workUnit?.name || item.workUnit,
         }));
 
-        // 🔹 mapping violation
+        // mapping violation
         const mappedVio = vio.map((item) => ({
           id: item.id,
           date: item.createdAt,
@@ -132,11 +135,12 @@ export default function MonitoringPage() {
           topic:item.violationDesc,
           status: item.status || "submitted",
           type: "violation",
+          followUps:item.followUps,
           violationType: item.violationType,
+          isFollowUp: item.followUps.length > 0 ? "1" : "0",
           workUnit: item.workUnit?.name || item.workUnit,
         }));
 
-        // 🔥 gabungkan
         const combined = [...mappedCons, ...mappedVio];
 
         // (opsional) sort by date terbaru
@@ -183,17 +187,29 @@ export default function MonitoringPage() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  console.log(dataConsultation);
-  console.log(dataViolation);
-
   const handleViewDetails = (report) => {
     setSelectedReport(report);
   };
 
   const handleFollowUp = (report) => {
-    setSelectedReport(report);
-    setFollowUpModal(true);
-  };
+  setSelectedReport(report);
+
+  if (report.followUps?.length > 0) {
+    setFollowUpData({
+      notes: report.followUps[0].notes || "",
+      linkFile: report.followUps[0].linkFile || "",
+      id: report.followUps[0].id, 
+    });
+  } else {
+    setFollowUpData({
+      notes: "",
+      linkFile: "",
+      id: null,
+    });
+  }
+
+  setFollowUpModal(true);
+};
 
   const handleChangeStatus = (report) => {
     setSelectedReport(report);
@@ -201,42 +217,95 @@ export default function MonitoringPage() {
     setStatusModal(true);
   };
 
-  const handleFollowUpSubmit = () => {
-    if (selectedReport && followUpData.notes) {
-      addFollowUp({
-        reportId: selectedReport.id,
-        notes: followUpData.notes,
-        documents: followUpData.documents.map((f) => f.name),
+  const handleFollowUpSubmit = async () => {
+  if (selectedReport && followUpData.notes) {
+    const payload = {
+      ...followUpData,
+      userId: "1",
+      type: selectedReport.type,
+      consultationId:
+        selectedReport.type === "consultation"
+          ? selectedReport.id
+          : null,
+      violationId:
+        selectedReport.type === "violation"
+          ? selectedReport.id
+          : null,
+    };
+
+    let newFollowUp;
+
+    if (selectedReport.followUps?.length > 0) {
+      // UPDATE
+      const res = await patchFollowUps({
+        id: selectedReport.followUps[0].id,
+        data: payload,
       });
-      setFollowUpModal(false);
-      setFollowUpData({ notes: "", documents: [] });
-      setSelectedReport(null);
+      newFollowUp = res.data;
+    } else {
+      // CREATE
+      const res = await postFollowUps(payload);
+      newFollowUp = res.data;
     }
-  };
 
-  const handleStatusSubmit = () => {
-    if (selectedReport && newStatus) {
-      updateReportStatus(selectedReport.id, newStatus);
-      setStatusModal(false);
-      setSelectedReport(null);
-      setNewStatus("");
-    }
-  };
+    
+    setAllData((prev) =>
+      prev.map((item) => {
+        if (item.id === selectedReport.id) {
+          return {
+            ...item,
+            followUps: [newFollowUp],
+            isFollowUp: "1",
+          };
+        }
+        return item;
+      })
+    );
 
-  const handleFollowUpFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
-    setFollowUpData((prev) => ({
+   
+    setSelectedReport((prev) => ({
       ...prev,
-      documents: [...prev.documents, ...newFiles],
+      followUps: [newFollowUp],
+      isFollowUp: "1",
     }));
-  };
 
-  const removeFollowUpFile = (index) => {
-    setFollowUpData((prev) => ({
+    setFollowUpModal(false);
+    setFollowUpData({ notes: "", linkFile: "" });
+  }
+};
+
+  const handleStatusSubmit = async () => {
+  if (selectedReport && newStatus) {
+    const payload = {
+      status: newStatus,
+      type: selectedReport.type,
+    };
+
+    await patchStatus({
+      id: selectedReport.id,
+      data: payload,
+    });
+
+    // 🔥 update UI tanpa reload
+    setAllData((prev) =>
+      prev.map((item) =>
+        item.id === selectedReport.id
+          ? { ...item, status: newStatus }
+          : item
+      )
+    );
+
+    setSelectedReport((prev) => ({
       ...prev,
-      documents: prev.documents.filter((_, i) => i !== index),
+      status: newStatus,
     }));
-  };
+
+    setStatusModal(false);
+    setSelectedReport(null);
+    setNewStatus("");
+  }
+};
+
 
   const getReporterName = (report) => {
     return report.type === "consultation"
@@ -576,11 +645,8 @@ export default function MonitoringPage() {
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="followUpNotes">Follow Up Notes</Label>
+              <Label htmlFor="followUpNotes">Catatan tindak lanjut</Label>
               <Textarea
-                id="followUpNotes"
-                placeholder="Enter follow up notes..."
-                className="min-h-24"
                 value={followUpData.notes}
                 onChange={(e) =>
                   setFollowUpData((prev) => ({
@@ -591,12 +657,10 @@ export default function MonitoringPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="linkFile"></Label>
+              <Label htmlFor="linkFile">
+                Tautan dokumen pendukung (optional)
+              </Label>
               <Input
-                id="linkFile"
-                name="linkFile"
-                type="linkFile"
-                placeholder="Inputkan Tautan Dokumen Pendukung"
                 value={followUpData.linkFile}
                 onChange={(e) =>
                   setFollowUpData((prev) => ({
@@ -619,7 +683,9 @@ export default function MonitoringPage() {
             </Button>
             <Button
               onClick={handleFollowUpSubmit}
-              disabled={!followUpData.notes}
+              disabled={
+                !followUpData.notes || selectedReport?.status === "COMPLETED"
+              }
             >
               Save Follow Up
             </Button>
@@ -644,10 +710,10 @@ export default function MonitoringPage() {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="in-review">In Review</SelectItem>
-                  <SelectItem value="followed-up">Followed Up</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="SUBMITTED">Submitted</SelectItem>
+                  <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                  <SelectItem value="FOLLOWED_UP">Followed Up</SelectItem>
+                  <SelectItem value="COMPLETED">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>

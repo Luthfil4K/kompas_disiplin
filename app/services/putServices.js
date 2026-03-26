@@ -1,8 +1,14 @@
-import api from "../lib/api";
+import api from '@/lib/api';
 
-export const updateStatusByKabagTu = async ({ id, status, role }) => {
-  return api.patch(`/monitoring/updateStatus/${id}`, {
-    status,
-    role,
+export const patchStatus = async ({ id, data }) => {
+  return api.patch(`/monitoring/patchStatus/${id}`, {
+    data,
+  });
+};
+
+export const patchFollowUps = async ({ id, data }) => {
+  
+  return api.patch(`/monitoring/patchFollowUps/${id}`, {
+   data
   });
 };

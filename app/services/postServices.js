@@ -13,3 +13,10 @@ export const postDisciplineByKabkoKatim = async ( data) => {
   });
   return res.data;
 };
+
+export const postFollowUps = async ( data) => {
+  const res = await api.post(`/monitoring/postFollowUps/`, {
+    data, 
+  });
+  return res.data;
+};
