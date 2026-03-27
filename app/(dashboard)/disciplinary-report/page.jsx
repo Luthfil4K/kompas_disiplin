@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useData } from "@/lib/data-context";
+import { useAuth } from "@/lib/auth-context";
 
 import { postDisciplineByKabkoKatim } from "../../services/postServices";
 
@@ -31,6 +31,13 @@ const violationTypes = [
 ];
 
 export default function DisciplinaryReportPage() {
+  const {user} = useAuth()
+
+  // console.log("user")
+  // console.log(user)
+  // console.log(user)
+  // console.log("user")
+  
   const [submitted, setSubmitted] = useState(false);
  
   const [formData, setFormData] = useState({

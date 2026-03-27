@@ -1,5 +1,11 @@
+
+"use client"
+
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from "@/lib/auth-context";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getMe } from "./services/auth";
 import './globals.css'
 
 const geistSans = Geist({ 
@@ -12,18 +18,25 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono'
 })
 
-export const metadata = {
-  title: 'Admin Dashboard - Government System',
-  description: 'Integrated administration system for legal consultation and disciplinary management',
-}
 
 export default function RootLayout({ children }) {
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getMe()
+      .then((res) => setUser(res.user))
+      .catch(() => setUser(null));
+  }, []);
+
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+      <body className="...">
+        <AuthProvider value={{ user }}>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

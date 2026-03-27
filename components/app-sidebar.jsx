@@ -7,9 +7,9 @@ import {
   AlertTriangle,
   Eye,
   BarChart3,
-  Shield
+  Shield,
+  LogOut // ✅ tambahin ini
 } from "lucide-react"
-
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +23,39 @@ import {
   SidebarFooter
 } from "@/components/ui/sidebar"
 
-const menuItems = [
+import { useRouter } from "next/navigation";
+
+
+const menuItemsKabkoKatim = [
+  {
+    title: "Legal Consultation",
+    url: "/legal-consultation",
+    icon: Scale
+  },
+  {
+    title: "Disciplinary Report",
+    url: "/disciplinary-report",
+    icon: AlertTriangle
+  },
+ 
+  
+]
+const menuItemsKabag = [
+ 
+  {
+    title: "Report Monitoring",
+    url: "/monitoring",
+    icon: Eye
+  },
+  {
+    title: "Evaluation Dashboard",
+    url: "/evaluation",
+    icon: BarChart3
+  },
+  
+]
+
+const menuItemsAdmin = [
   {
     title: "Legal Consultation",
     url: "/legal-consultation",
@@ -43,11 +75,27 @@ const menuItems = [
     title: "Evaluation Dashboard",
     url: "/evaluation",
     icon: BarChart3
-  }
+  },
+  
 ]
 
-export function AppSidebar() {
+export function AppSidebar(user) {
   const pathname = usePathname()
+
+  const role= user
+  console.log("role di app sidebar: ", role.role)
+  
+const router = useRouter();
+
+
+const handleLogout = async () => {
+  await fetch("/api/auth/logout", {
+    method: "POST",
+  });
+
+  router.push("/login");
+};
+
 
   return (
     <Sidebar>
@@ -57,8 +105,12 @@ export function AppSidebar() {
             <Shield className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-sidebar-foreground">Admin Panel</span>
-            <span className="text-xs text-muted-foreground">Government System</span>
+            <span className="text-sm font-semibold text-sidebar-foreground">
+              Admin Panel
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Government System
+            </span>
           </div>
         </Link>
       </SidebarHeader>
@@ -67,10 +119,10 @@ export function AppSidebar() {
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {menuItemsAdmin.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
+                  <SidebarMenuButton
+                    asChild
                     isActive={pathname === item.url}
                     tooltip={item.title}
                   >
@@ -86,16 +138,26 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout}>
+              <LogOut />
+              <span>Sign Out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
             A
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-sidebar-foreground">Administrator</span>
+            <span className="text-sm font-medium text-sidebar-foreground">
+              Administrator
+            </span>
             <span className="text-xs text-muted-foreground">admin@gov.id</span>
           </div>
         </div>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

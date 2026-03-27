@@ -11,7 +11,14 @@ import {
   Alert,
 } from "@mui/material";
 
+import { useRouter } from "next/navigation";
+import { login } from "../../services/login";
+
+
+
 export default function Login() {
+const router = useRouter();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -20,7 +27,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // handle input change
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -28,7 +34,6 @@ export default function Login() {
     });
   };
 
-  // validasi sederhana
   const validate = () => {
     if (!form.email || !form.password) {
       return "Semua field wajib diisi";
@@ -45,34 +50,38 @@ export default function Login() {
     return "";
   };
 
-  // handle login
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+  const validationError = validate();
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    try {
-      // simulasi API login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    
+    console.log(form.email)
+    console.log(form.password)
+    const { token, user } = await login(form.email, form.password);    
 
-      if (form.email === "admin@mail.com" && form.password === "123456") {
-        alert("Login berhasil!");
-      } else {
-        setError("Email atau password salah");
-      }
-    } catch (err) {
-      setError("Terjadi kesalahan, coba lagi");
-    } finally {
-      setLoading(false);
-    }
-  };
+    localStorage.setItem("token", token);
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    router.push("/monitoring");
+
+  } catch (err) {
+    setError(err.response?.data?.message || "Login gagal");
+  } finally {
+    setLoading(false);
+  }
+};
+
+ 
 
   return (
     <Box
