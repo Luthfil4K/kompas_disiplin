@@ -82,9 +82,12 @@ const menuItemsAdmin = [
 export function AppSidebar(user) {
   const pathname = usePathname()
 
-  const role= user
-  console.log("role di app sidebar: ", role.role)
+  const role= user?.role?.user?.role
+  // console.log("role di app sidebar:", role.role?.user?.role)
   
+  console.log(role)
+  console.log(role)
+  console.log(role)
 const router = useRouter();
 
 
@@ -95,6 +98,7 @@ const handleLogout = async () => {
 
   router.push("/login");
 };
+console.log("isrole=kabagtu: ",role==="KABAG_TU")
 
 
   return (
@@ -119,7 +123,7 @@ const handleLogout = async () => {
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItemsAdmin.map((item) => (
+              {role==="KABAG_TU"||role==="ADMIN"?menuItemsAdmin:menuItemsKabkoKatim.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
