@@ -8,6 +8,7 @@ export async function GET(req, { params }) {
       include:{
         workUnit:true,
         followUps:true,
+        USER:true
       }
     });
 

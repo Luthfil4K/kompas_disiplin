@@ -9,6 +9,7 @@ export async function GET(req, { params }) {
         workUnit:true,
         violationType:true,
         followUps:true,
+        USER:true
       }
     });
 

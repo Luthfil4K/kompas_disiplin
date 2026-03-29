@@ -30,7 +30,7 @@ export async function middleware(req) {
 
     
     if (path.startsWith("/monitoring")) {
-      if (!["ADMIN", "KABKO_KATIM", "KABAG_TU"].includes(payload.role)) {
+      if (!["ADMIN", "KABKO_KATIM", "KABAG_TU", "SUPERADMIN"].includes(payload.role)) {
         return NextResponse.redirect(new URL("/monitoring", req.url));
       }
     }

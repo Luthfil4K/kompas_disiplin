@@ -14,10 +14,16 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useData } from "@/lib/data-context";
-
+import { useAuth } from "@/lib/auth-context";
 import { postConsultationByKabkoKatim } from "../../services/postServices";
 
 export default function LegalConsultationPage() {
+
+  const { user, loading } = useAuth();
+  const dataUser = user;
+  if (loading) return <div>Loading...</div>;
+ 
+
   const { addConsultation } = useData();
   const [submitted, setSubmitted] = useState(false);
   const [files, setFiles] = useState([]);
@@ -29,6 +35,7 @@ export default function LegalConsultationPage() {
     phone: "",
     topic: "",
     linkFile: "",
+    userId:dataUser?.id,
   });
 
   const handleInputChange = (e) => {
@@ -37,14 +44,12 @@ export default function LegalConsultationPage() {
   };
 
   const handleSubmit = async (e) => {
-    console.log(formData);
-    console.log("formData");
+  
     e.preventDefault();
     await postConsultationByKabkoKatim(formData);
 
     setSubmitted(true);
 
-    // Reset form after 3 seconds
     setTimeout(() => {
       setFormData({
         nip: 1,
@@ -53,6 +58,7 @@ export default function LegalConsultationPage() {
         workUnit: "",
         phone: "",
         topic: "",
+        
       });
       setFiles([]);
       setSubmitted(false);
@@ -88,42 +94,41 @@ export default function LegalConsultationPage() {
             <Scale className="h-5 w-5 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            Legal Consultation
+            Form Konsultasi
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Submit your legal consultation request. Fill in all required fields
-          and attach any supporting documents.
+          Ajukan konsultasi, lengkapi form dibawah ini.
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Personal Information</CardTitle>
+            <CardTitle className="text-lg">Informasi Personal</CardTitle>
             <CardDescription>
-              Please provide your contact details
+              
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">Nama Lengkap</Label>
                 <Input
                   id="fullName"
                   name="fullName"
-                  placeholder="Enter your full name"
+                  placeholder="Isi nama lengkap anda"
                   value={formData.fullName}
                   onChange={handleInputChange}
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="position">Position / Job Title</Label>
+                <Label htmlFor="position">Jabatan</Label>
                 <Input
                   id="position"
                   name="position"
-                  placeholder="Enter your position"
+                  placeholder="Isi jabatan anda"
                   value={formData.position}
                   onChange={handleInputChange}
                   required
@@ -136,19 +141,19 @@ export default function LegalConsultationPage() {
                 <Input
                   id="workUnit"
                   name="workUnit"
-                  placeholder="Enter your work unit"
+                  placeholder="Isi kode satker"
                   value={formData.workUnit}
                   onChange={handleInputChange}
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">No Telp.</Label>
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="Enter your phone number"
+                  placeholder="Isi no telp/WA"
                   value={formData.phone}
                   onChange={handleInputChange}
                   required
@@ -160,18 +165,18 @@ export default function LegalConsultationPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Consultation Details</CardTitle>
+            <CardTitle className="text-lg">Detail Konsultasi</CardTitle>
             <CardDescription>
-              Describe your consultation topic in detail
+             
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              <Label htmlFor="topic">Consultation Topic / Description</Label>
+              <Label htmlFor="topic">Deskripsi Konsultasi</Label>
               <Textarea
                 id="topic"
                 name="topic"
-                placeholder="Describe your legal consultation topic or question..."
+                placeholder="Jelaskan deskripsi konsultasi"
                 className="min-h-32"
                 value={formData.topic}
                 onChange={handleInputChange}
@@ -183,9 +188,9 @@ export default function LegalConsultationPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Document Pendukung</CardTitle>
+            <CardTitle className="text-lg">Dokument Pendukung</CardTitle>
             <CardDescription>
-              Upload supporting documents (PDF, Word, Excel, Images) - Optional
+              Unggah dokumen pendukung - Optional
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -202,7 +207,7 @@ export default function LegalConsultationPage() {
         </Card>
 
         <Button type="submit" className="w-full" size="lg">
-          Submit Consultation
+          Submit Konsultasi
         </Button>
       </form>
     </div>

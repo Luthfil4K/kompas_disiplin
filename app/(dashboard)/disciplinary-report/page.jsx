@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 
+import { useAuth } from "@/lib/auth-context";
 import { postDisciplineByKabkoKatim } from "../../services/postServices";
 
 const violationTypes = [
@@ -31,12 +32,11 @@ const violationTypes = [
 ];
 
 export default function DisciplinaryReportPage() {
-  const {user} = useAuth()
+  const { user, loading } = useAuth();
+  const dataUser = user;
+  if (loading) return <div>Loading...</div>;
 
-  // console.log("user")
-  // console.log(user)
-  // console.log(user)
-  // console.log("user")
+  
   
   const [submitted, setSubmitted] = useState(false);
  
@@ -49,6 +49,7 @@ export default function DisciplinaryReportPage() {
     violationType: "",
     description: "",
     linkFile: "",
+    userId:dataUser?.id,
   });
 
   const handleInputChange = (e) => {
@@ -92,11 +93,10 @@ export default function DisciplinaryReportPage() {
               <Check className="h-8 w-8 text-primary-foreground" />
             </div>
             <h2 className="mb-2 text-xl font-semibold text-foreground">
-              Report Submitted
+              Form Laporan Pelanggaran
             </h2>
             <p className="text-center text-muted-foreground">
-              Your disciplinary violation report has been submitted
-              successfully. It will be reviewed by the appropriate authorities.
+              Laporan pelanggaran disiplin Anda telah berhasil dikirim. Laporan ini akan ditinjau oleh Admin BPS Provinsi
             </p>
           </CardContent>
         </Card>
@@ -112,28 +112,27 @@ export default function DisciplinaryReportPage() {
             <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            Disciplinary Violation Report
+            Laporan Pelanggaran Disiplin
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Submit a report for disciplinary violations. All reports are
-          confidential and will be reviewed thoroughly.
+          Form laporan untuk pelanggaran disiplin. Semua laporan bersifat rahasia dan akan ditinjau secara menyeluruh.
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Reporter Information</CardTitle>
-            <CardDescription>Your identity as the reporter</CardDescription>
+            <CardTitle className="text-lg">Informasi Pelapor</CardTitle>
+            <CardDescription>Identitas anda sebagai pelapor</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              <Label htmlFor="reporterName">Reporter Name</Label>
+              <Label htmlFor="reporterName">Nama Pelapor</Label>
               <Input
                 id="reporterName"
                 name="reporterName"
-                placeholder="Enter your name"
+                placeholder="Inputkan nama anda"
                 value={formData.reporterName}
                 onChange={handleInputChange}
                 required
@@ -145,31 +144,31 @@ export default function DisciplinaryReportPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg">
-              Reported Person Information
+              Informasi Pihak Terlapor
             </CardTitle>
             <CardDescription>
-              Details of the person being reported
+              Detail informasi pihak yang akan dilaporkan
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="reportedName">Reported Person Name</Label>
+                <Label htmlFor="reportedName">Nama Orang Terlapor</Label>
                 <Input
                   id="reportedName"
                   name="reportedName"
-                  placeholder="Full name of reported person"
+                  placeholder="Nama lengkap pihak terlapor"
                   value={formData.reportedName}
                   onChange={handleInputChange}
                   required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="nip">NIP (Employee ID)</Label>
+                <Label htmlFor="nip">NIP</Label>
                 <Input
                   id="nip"
                   name="nip"
-                  placeholder="Enter NIP"
+                  placeholder="NIP"
                   value={formData.nip}
                   onChange={handleInputChange}
                   required
@@ -178,11 +177,11 @@ export default function DisciplinaryReportPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="position">Position</Label>
+                <Label htmlFor="position">Jabatan</Label>
                 <Input
                   id="position"
                   name="position"
-                  placeholder="Job position"
+                  placeholder="Jabatan"
                   value={formData.position}
                   onChange={handleInputChange}
                   required
@@ -190,12 +189,12 @@ export default function DisciplinaryReportPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="workUnit">
-                  Work Unit / Department (Satker)
+                  Satuan Kerja
                 </Label>
                 <Input
                   id="workUnit"
                   name="workUnit"
-                  placeholder="Work unit"
+                  placeholder="Satuan kerja"
                   value={formData.workUnit}
                   onChange={handleInputChange}
                   required
@@ -207,18 +206,18 @@ export default function DisciplinaryReportPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Violation Details</CardTitle>
-            <CardDescription>Describe the violation in detail</CardDescription>
+            <CardTitle className="text-lg">Detail Pelanggaran Disiplin</CardTitle>
+            <CardDescription>Jelaskan pelanggaran yang dilakukan pihak terlapor</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="violationType">Violation Type</Label>
+              <Label htmlFor="violationType">Jenis Pelanggaran Disiplin</Label>
               <Select
                 onValueChange={handleSelectChange}
                 value={formData.violationType}
               >
                 <SelectTrigger id="violationType">
-                  <SelectValue placeholder="Select violation type" />
+                  <SelectValue placeholder="Pilih jenis pelanggaran" />
                 </SelectTrigger>
                 <SelectContent>
                   {violationTypes.map((type) => (
@@ -230,11 +229,11 @@ export default function DisciplinaryReportPage() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Violation Description</Label>
+              <Label htmlFor="description">Jelaskan pelanggaran yang dilakukan secara detail</Label>
               <Textarea
                 id="description"
                 name="description"
-                placeholder="Provide a detailed description of the violation, including dates, locations, and any witnesses..."
+                placeholder="Detail pelanggaran..."
                 className="min-h-32"
                 value={formData.description}
                 onChange={handleInputChange}
@@ -246,10 +245,9 @@ export default function DisciplinaryReportPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Supporting Documents</CardTitle>
+            <CardTitle className="text-lg">Dokumen Pendukung (optional)</CardTitle>
             <CardDescription>
-              Upload evidence such as investigation reports, meeting notes, or
-              other documents
+              Ungga bukti dokumen atau dokumen pendukung lainnya...
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -266,7 +264,7 @@ export default function DisciplinaryReportPage() {
         </Card>
 
         <Button type="submit" className="w-full" size="lg">
-          Submit Report
+          Submit Laporan
         </Button>
       </form>
     </div>

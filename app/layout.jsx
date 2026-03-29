@@ -20,22 +20,12 @@ const geistMono = Geist_Mono({
 
 
 export default function RootLayout({ children }) {
-
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    getMe()
-      .then((res) => setUser(res.user))
-      .catch(() => setUser(null));
-  }, []);
-
   return (
-    <html lang="en">
-      <body className="...">
-        <AuthProvider value={{ user }}>
+    <html>
+      <body>
+        <AuthProvider>
           {children}
         </AuthProvider>
-        <Analytics />
       </body>
     </html>
   );

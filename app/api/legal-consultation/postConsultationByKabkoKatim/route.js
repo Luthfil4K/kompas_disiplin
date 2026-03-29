@@ -6,6 +6,8 @@ export async function POST(req) {
 
     const { data } = body;
 
+    console.log(data)
+
     const postConsultation = await prisma.tbl_consultation.create({
       data: {
         id: data.id,
@@ -15,6 +17,7 @@ export async function POST(req) {
         phone: data.phone,
         topic: data.topic,
         linkFile: data.linkFile?data.linkFile:"",
+        userId:data.userId
       },
     });
     return Response.json(postConsultation, { status: 200 });

@@ -31,13 +31,17 @@ import {
 } from "recharts"
 import { useData } from "@/lib/data-context"
 
+import { getAllDiscipline } from "../../services/getServices";
+import { getAllConsultation } from "../../services/getServices";
+import { useState, useEffect } from "react"
+
 const chartConfig = {
   consultations: {
-    label: "Consultations",
+    label: "Konsultasi",
     color: "var(--chart-1)"
   },
   violations: {
-    label: "Violations",
+    label: "Laporan Pelanggaran",
     color: "var(--chart-4)"
   }
 }
@@ -51,51 +55,186 @@ const pieColors = [
 ]
 
 export default function EvaluationPage() {
-  const { 
-    getStats, 
-    getMonthlyData, 
-    getViolationCategories, 
+  const {
+    getStats,
+    getMonthlyData,
+    getViolationCategories,
     getAllDocuments,
-    getPunishmentSummary 
+    getPunishmentSummary
   } = useData()
 
+  const [dashboardData, setDashboardData] = useState({
+    consultations: [],
+    violations: [],
+    totalConsultations: 0,
+    totalViolations: 0,
+    totalInProgress: 0,
+    totalCompleted: 0,
+    totalInProgressVio: 0,
+    totalInProgressCons: 0,
+    totalInCompleteVio: 0,
+    totalInCompleteCons: 0,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const cons = await getAllConsultation();
+        const vio = await getAllDiscipline();
+
+        console.log(cons)
+        console.log(vio)
+
+        const inProgressCons = cons.filter(
+          (item) => item.status !== "COMPLETED"
+        ).length;
+
+        const completedCons = cons.filter(
+          (item) => item.status === "COMPLETED"
+        ).length;
+
+        const inProgressVio = vio.filter(
+          (item) => item.status !== "COMPLETED"
+        ).length;
+
+        const completedVio = vio.filter(
+          (item) => item.status === "COMPLETED"
+        ).length;
+
+        setDashboardData({
+          consultations: cons,
+          violations: vio,
+          totalConsultations: cons.length,
+          totalViolations: vio.length,
+          totalInProgress: inProgressCons + inProgressVio,
+          totalCompleted: completedCons + completedVio,
+          totalInProgressVio: inProgressVio,
+          totalInProgressCons: inProgressCons,
+          totalInCompleteVio: completedVio,
+          totalInCompleteCons: completedCons,
+        });
+
+      } catch (err) {
+        console.error("Gagal mengambil data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const generateMonthlyData = (cons, vio) => {
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const result = months.map((month, index) => ({
+      month,
+      consultations: 0,
+      violations: 0,
+    }));
+
+    cons.forEach((item) => {
+      const date = new Date(item.createdAt);
+      const monthIndex = date.getMonth();
+      result[monthIndex].consultations += 1;
+    });
+
+    vio.forEach((item) => {
+      const date = new Date(item.createdAt);
+      const monthIndex = date.getMonth();
+      result[monthIndex].violations += 1;
+    });
+
+    return result;
+  };
+
+  const getViolationCategoriesFromData = (vio) => {
+    const categories = {
+      tinggi: 0,
+      sedang: 0,
+      rendah: 0,
+    };
+
+    vio.forEach((item) => {
+      const type = item?.violationType?.name?.toLowerCase();
+
+      if (categories[type] !== undefined) {
+        categories[type]++;
+      }
+    });
+    return Object.keys(categories).map((key) => ({
+      name: key,
+      value: categories[key] || 0,
+    }));
+  };
+
+
+  const mergedDocuments = [
+    ...dashboardData.consultations.map((item) => ({
+      id: item.id,
+      name: item.name,
+      linkFile: item.linkFile,
+      type: "Consultation",
+      date: item.createdAt,
+    })),
+    ...dashboardData.violations.map((item) => ({
+      id: item.id,
+      name: item.reporterName,
+      linkFile: item.linkFile,
+      type: "Violation",
+      date: item.createdAt,
+    })),
+  ];
   const stats = getStats()
-  const monthlyData = getMonthlyData()
-  const violationCategories = getViolationCategories()
+  const monthlyData = generateMonthlyData(
+    dashboardData.consultations || [],
+    dashboardData.violations || []
+  );
+  const violationCategories = getViolationCategoriesFromData(
+    dashboardData.violations
+  );
   const documents = getAllDocuments()
   const punishmentSummary = getPunishmentSummary()
 
   const statCards = [
     {
       title: "Total Consultations",
-      value: stats.totalConsultations,
+      value: dashboardData.totalConsultations,
       icon: Scale,
       color: "text-primary",
-      bgColor: "bg-primary/10"
+      bgColor: "bg-primary/10",
     },
     {
       title: "Total Violations",
-      value: stats.totalViolations,
+      value: dashboardData.totalViolations,
       icon: AlertTriangle,
       color: "text-destructive",
-      bgColor: "bg-destructive/10"
+      bgColor: "bg-destructive/10",
     },
     {
       title: "In Progress",
-      value: stats.inProgress,
+      value: dashboardData.totalInProgress,
       icon: Clock,
       color: "text-warning",
-      bgColor: "bg-warning/10"
+      bgColor: "bg-warning/10",
+      sub: [
+        { label: "Konsultasi", value: dashboardData.totalInProgressCons },
+        { label: "Laporan Pelanggaran", value: dashboardData.totalInProgressVio },
+      ],
     },
     {
       title: "Completed",
-      value: stats.completed,
+      value: dashboardData.totalCompleted,
       icon: CheckCircle,
       color: "text-success",
-      bgColor: "bg-success/10"
-    }
-  ]
-
+      bgColor: "bg-success/10",
+      sub: [
+        { label: "Konsultasi", value: dashboardData.totalInCompleteCons },
+        { label: "Laporan Pelanggaran", value: dashboardData.totalInCompleteVio },
+      ],
+    },
+  ];
   return (
     <div>
       <div className="mb-6">
@@ -103,10 +242,10 @@ export default function EvaluationPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <BarChart3 className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Evaluation Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         </div>
         <p className="text-muted-foreground">
-          View statistics, analytics, and documentation from all submitted reports.
+          Statistik, analitik, dan dokumentasi dari semua laporan yang dikirimkan.
         </p>
       </div>
 
@@ -114,14 +253,33 @@ export default function EvaluationPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
           <Card key={stat.title}>
-            <CardContent className="flex items-center gap-4 p-6">
+            <CardContent className="flex items-start gap-4 p-6">
               <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.bgColor}`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
-              <div>
+
+              <div className="flex flex-col">
                 <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+
+                {/* VALUE + SUB INLINE */}
+                <div className="flex items-end gap-4">
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+
+                </div>
+                 {stat.sub && (
+                    <div className="flex gap-3 text-xs text-muted-foreground">
+                      {stat.sub.map((item) => (
+                        <div key={item.label} className="flex items-start gap-1">
+                          <span>{item.label}:</span>
+                          <span className="font-medium text-foreground">
+                            {item.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
+              
             </CardContent>
           </Card>
         ))}
@@ -134,22 +292,22 @@ export default function EvaluationPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              Monthly Reports
+              Laporan Bulanan
             </CardTitle>
-            <CardDescription>Consultations and violations per month</CardDescription>
+            <CardDescription>Konsultasi dan Laporan Pelanggaran per bulan</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-72 w-full">
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis 
-                  dataKey="month" 
+                <XAxis
+                  dataKey="month"
                   stroke="var(--muted-foreground)"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
-                <YAxis 
+                <YAxis
                   stroke="var(--muted-foreground)"
                   fontSize={12}
                   tickLine={false}
@@ -157,14 +315,14 @@ export default function EvaluationPage() {
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar 
-                  dataKey="consultations" 
-                  fill="var(--chart-1)" 
+                <Bar
+                  dataKey="consultations"
+                  fill="var(--chart-1)"
                   radius={[4, 4, 0, 0]}
                 />
-                <Bar 
-                  dataKey="violations" 
-                  fill="var(--chart-4)" 
+                <Bar
+                  dataKey="violations"
+                  fill="var(--chart-4)"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -198,9 +356,9 @@ export default function EvaluationPage() {
                     labelLine={false}
                   >
                     {violationCategories.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={pieColors[index % pieColors.length]} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={pieColors[index % pieColors.length]}
                       />
                     ))}
                   </Pie>
@@ -210,8 +368,8 @@ export default function EvaluationPage() {
             <div className="mt-4 flex flex-wrap justify-center gap-4">
               {violationCategories.map((category, index) => (
                 <div key={category.name} className="flex items-center gap-2">
-                  <div 
-                    className="h-3 w-3 rounded-full" 
+                  <div
+                    className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: pieColors[index % pieColors.length] }}
                   />
                   <span className="text-sm text-muted-foreground">{category.name}</span>
@@ -223,7 +381,7 @@ export default function EvaluationPage() {
       </div>
 
       {/* Punishment Summary Table */}
-      <Card className="mb-6">
+      {/* <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" />
@@ -250,7 +408,7 @@ export default function EvaluationPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-2 flex-1 rounded-full bg-muted">
-                        <div 
+                        <div
                           className="h-2 rounded-full bg-primary"
                           style={{ width: `${item.percentage}%` }}
                         />
@@ -262,19 +420,19 @@ export default function EvaluationPage() {
             </TableBody>
           </Table>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Documents List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Uploaded Documents
+            Dokumen Pendukung
           </CardTitle>
-          <CardDescription>All documents submitted through forms and follow-ups</CardDescription>
+          <CardDescription>Semua dokumen yang diajukan melalui formulir</CardDescription>
         </CardHeader>
         <CardContent>
-          {documents.length === 0 ? (
+          {mergedDocuments.length === 0 ? (
             <div className="flex h-24 items-center justify-center text-muted-foreground">
               No documents uploaded yet.
             </div>
@@ -282,32 +440,48 @@ export default function EvaluationPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Document Name</TableHead>
-                  <TableHead>Report ID</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Link</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.slice(0, 10).map((doc, index) => (
+                {mergedDocuments.slice(0, 10).map((doc, index) => (
                   <TableRow key={index}>
+                    {/* NAME (klik jadi link) */}
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <span className="font-medium">{doc.name}</span>
-                      </div>
+                      <a
+                        href={`https://${doc.linkFile}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 font-medium text-primary hover:underline"
+                      >
+                        <FileText className="h-4 w-4" />
+                        {doc.name}
+                      </a>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{doc.reportId}</TableCell>
+
+                    {/* TYPE */}
                     <TableCell>
-                      <Badge variant="outline">{doc.reportType}</Badge>
+                      <Badge variant="outline">{doc.type}</Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{doc.date}</TableCell>
+
+                    {/* LINK FILE (opsional tampil) */}
+                    <TableCell className="text-sm text-muted-foreground">
+                      {doc.linkFile}
+                    </TableCell>
+
+                    {/* DATE */}
+                    <TableCell className="text-muted-foreground">
+                      {new Date(doc.date).toLocaleDateString()}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}
-          {documents.length > 10 && (
+          {mergedDocuments.length > 10 && (
             <div className="mt-4 text-center text-sm text-muted-foreground">
               Showing 10 of {documents.length} documents
             </div>

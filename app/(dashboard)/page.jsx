@@ -19,10 +19,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useData } from "@/lib/data-context";
 import { useAuth } from "@/lib/auth-context";
+import { getAllDiscipline } from "../services/getServices";
+import { getAllConsultation } from "../services/getServices";
 
 const menuItems = [
   {
-    title: "Legal Consultation",
+    title: "Form Konsultasi",
     description:
       "Submit legal consultation requests and get professional advice on regulations and procedures.",
     url: "/legal-consultation",
@@ -31,7 +33,7 @@ const menuItems = [
     bgColor: "bg-primary/10",
   },
   {
-    title: "Disciplinary Report",
+    title: "Laporan Pelanggaran Disiplin",
     description:
       "Report disciplinary violations with supporting documents for investigation.",
     url: "/disciplinary-report",
@@ -40,7 +42,7 @@ const menuItems = [
     bgColor: "bg-destructive/10",
   },
   {
-    title: "Report Monitoring",
+    title: "Monitoring Laporan",
     description:
       "Track and manage all submitted reports, follow up on cases, and update statuses.",
     url: "/monitoring",
@@ -49,7 +51,7 @@ const menuItems = [
     bgColor: "bg-info/10",
   },
   {
-    title: "Evaluation Dashboard",
+    title: " Dashboard",
     description:
       "View analytics, statistics, and comprehensive data visualization of all reports.",
     url: "/evaluation",
@@ -61,26 +63,26 @@ const menuItems = [
 
 export default function HomePage() {
 
-  // console.log("user")
-  // console.log(user)
-  // console.log("user")
+   
+
   const { getStats } = useData();
   const stats = getStats();
   const { user } = useAuth();
   const filteredMenu = menuItems.filter((item) => {
     if (item.url === "/evaluation" && user?.role !== "ADMIN") {
-      return false;
+      return true;
     }
 
     if (
       item.url === "/monitoring" &&
       !["ADMIN", "KATIM"].includes(user?.role)
     ) {
-      return false;
+      return true;
     }
 
     return true;
   });
+
   return (
     <div>
       <div className="mb-8">

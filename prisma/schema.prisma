@@ -23,6 +23,8 @@ model tbl_user {
   createdAt       DateTime @default(now())
 
   actions         tbl_follow_up[]
+  consultations   tbl_consultation[]
+  violations      tbl_violation_report[]
 }
 
 enum Role {
@@ -30,6 +32,7 @@ enum Role {
   KABAG_TU
   KAPROV
   KABKO_KATIM
+  SUPERADMIN
 }
 
 model tbl_work_unit {
@@ -51,6 +54,10 @@ model tbl_consultation {
   workUnitId      String
   workUnit        tbl_work_unit       @relation(fields: [workUnitId], references: [id])
 
+  userId          String
+  USER            tbl_user            @relation(fields: [userId], references: [id])
+
+
   status          ReportStatus        @default(SUBMITTED)
 
   createdAt       DateTime            @default(now())
@@ -71,6 +78,10 @@ model tbl_violation_report {
   violationType    tbl_violation_type  @relation(fields: [violationTypeId], references: [id])
   linkFile         String?
   violationDesc    String?
+
+  userId           String
+  USER             tbl_user            @relation(fields: [userId], references: [id])
+
   
   workUnitId       String
   workUnit         tbl_work_unit       @relation(fields: [workUnitId], references: [id])

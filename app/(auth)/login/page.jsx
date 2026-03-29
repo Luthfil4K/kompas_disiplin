@@ -13,12 +13,14 @@ import {
 
 import { useRouter } from "next/navigation";
 import { login } from "../../services/login";
-
+import { useAuth } from "@/lib/auth-context";
+import { getMe } from "@/app/services/auth";
 
 
 export default function Login() {
-const router = useRouter();
+  const router = useRouter();
 
+  const { setUser } = useAuth();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -50,38 +52,22 @@ const router = useRouter();
     return "";
   };
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
   e.preventDefault();
 
-  const validationError = validate();
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setError("");
-  setLoading(true);
-
   try {
-    
-    console.log(form.email)
-    console.log(form.password)
-    const { token, user } = await login(form.email, form.password);    
+    await login(form.email, form.password);
 
-    localStorage.setItem("token", token);
-
-    localStorage.setItem("user", JSON.stringify(user));
+    const res = await getMe(); // 🔥 ambil user dari cookie
+    setUser(res.user);         // 🔥 update context
 
     router.push("/monitoring");
-
   } catch (err) {
-    setError(err.response?.data?.message || "Login gagal");
-  } finally {
-    setLoading(false);
+    setError("Login gagal");
   }
 };
 
- 
+
 
   return (
     <Box

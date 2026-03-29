@@ -24,24 +24,30 @@ import {
 } from "@/components/ui/sidebar"
 
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 
 const menuItemsKabkoKatim = [
   {
-    title: "Legal Consultation",
+    title: "Form Konsultasi",
     url: "/legal-consultation",
     icon: Scale
   },
   {
-    title: "Disciplinary Report",
+    title: "Form Pelanggaran Disiplin",
     url: "/disciplinary-report",
     icon: AlertTriangle
   },
- 
-  
+  {
+    title: "Report Monitoring",
+    url: "/monitoring",
+    icon: Eye
+  },
+
+
 ]
 const menuItemsKabag = [
- 
+
   {
     title: "Report Monitoring",
     url: "/monitoring",
@@ -52,54 +58,55 @@ const menuItemsKabag = [
     url: "/evaluation",
     icon: BarChart3
   },
-  
+
 ]
 
 const menuItemsAdmin = [
   {
-    title: "Legal Consultation",
-    url: "/legal-consultation",
-    icon: Scale
+    title: "Dashboard",
+    url: "/evaluation",
+    icon: BarChart3
   },
-  {
-    title: "Disciplinary Report",
-    url: "/disciplinary-report",
-    icon: AlertTriangle
-  },
-  {
-    title: "Report Monitoring",
+   {
+    title: "Monitoring Laporan",
     url: "/monitoring",
     icon: Eye
   },
   {
-    title: "Evaluation Dashboard",
-    url: "/evaluation",
-    icon: BarChart3
+    title: "Form Konsultasi",
+    url: "/legal-consultation",
+    icon: Scale
   },
+  {
+    title: "Form Pelanggaran Disiplin",
+    url: "/disciplinary-report",
+    icon: AlertTriangle
+  },
+ 
   
+
 ]
 
-export function AppSidebar(user) {
+export function AppSidebar() {
+  const { user } = useAuth();
+
+  const role = user?.role;
   const pathname = usePathname()
 
-  const role= user?.role?.user?.role
-  // console.log("role di app sidebar:", role.role?.user?.role)
-  
   console.log(role)
-  console.log(role)
-  console.log(role)
-const router = useRouter();
+  const router = useRouter();
+  const { setUser } = useAuth();
 
 
-const handleLogout = async () => {
-  await fetch("/api/auth/logout", {
-    method: "POST",
-  });
+ const handleLogout = async () => {
+  await fetch("/api/auth/logout", { method: "POST" });
 
+  setUser(null); // 🔥 reset context
   router.push("/login");
 };
-console.log("isrole=kabagtu: ",role==="KABAG_TU")
 
+  // console.log("ini role: ",role)
+  //   console.log("isrole=kabagtu: ", role === "KABAG_TU")
 
   return (
     <Sidebar>
@@ -110,10 +117,10 @@ console.log("isrole=kabagtu: ",role==="KABAG_TU")
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-sidebar-foreground">
-              Admin Panel
+              Kompas Disiplin
             </span>
             <span className="text-xs text-muted-foreground">
-              Government System
+              BPS Prov. Bali
             </span>
           </div>
         </Link>
@@ -123,7 +130,10 @@ console.log("isrole=kabagtu: ",role==="KABAG_TU")
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {role==="KABAG_TU"||role==="ADMIN"?menuItemsAdmin:menuItemsKabkoKatim.map((item) => (
+              {(role === "KABAG_TU" || role === "ADMIN" || role === "SUPERADMIN"
+                ? menuItemsAdmin
+                : menuItemsKabkoKatim
+              ).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -156,9 +166,9 @@ console.log("isrole=kabagtu: ",role==="KABAG_TU")
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-sidebar-foreground">
-              Administrator
+              {user?.name}
             </span>
-            <span className="text-xs text-muted-foreground">admin@gov.id</span>
+            <span className="text-xs text-muted-foreground">{user?.email}</span>
           </div>
         </div>
       </SidebarFooter>

@@ -5,9 +5,7 @@ export async function POST(req) {
     const body = await req.json();
 
     const { data } = body;
-    console.log("data")
-    console.log(data)
-    console.log("data")
+    
 
     const postViolation = await prisma.tbl_violation_report.create({
       data: {
@@ -23,6 +21,7 @@ export async function POST(req) {
         },
         violationDesc: data.Description,
         linkFile: data.linkFile?data.linkFile:"",
+        userId:data.userId
       },
     });
     return Response.json(postViolation, { status: 200 });

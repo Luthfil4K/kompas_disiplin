@@ -8,15 +8,18 @@ export async function POST(req) {
     const { email, password } = await req.json();
 
     console.log(email)
-    console.log(password)
+    console.log(email)
+    console.log(email)
 
     const user = await prisma.tbl_user.findUnique({
       where: { email },
-      select:{
-        email:true,
-        password:true,
-        role:true,
-        nip:true
+      select: {
+        id: true,        // 🔥 WAJIB
+        name: true,      // 🔥 WAJIB
+        email: true,
+        password: true,
+        role: true,
+        nip: true
       }
     });
     
@@ -38,15 +41,17 @@ export async function POST(req) {
       id: user.id,
       role: user.role,
       name: user.name,
+      email:user.email
     });
 
+    console.log("TOKEN: ", token);
 
     const cookieStore = await cookies();
 
     cookieStore.set("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: false,
+      sameSite: "lax",
       path: "/",
     });
 
