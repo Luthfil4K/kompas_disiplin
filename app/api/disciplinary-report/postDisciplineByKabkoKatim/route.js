@@ -19,9 +19,13 @@ export async function POST(req) {
         violationType: {
             connect: { id: data.violationType }, 
         },
-        violationDesc: data.Description,
+        violationDesc: data.description,
         linkFile: data.linkFile?data.linkFile:"",
-        userId:data.userId
+        USER:{
+          connect: {id:data.userId}
+        }
+        // userId:data.userId
+        
       },
     });
     return Response.json(postViolation, { status: 200 });

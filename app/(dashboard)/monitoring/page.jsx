@@ -167,7 +167,15 @@ export default function MonitoringPage() {
         combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         setAllData(filteredByRole);
+        console.log("combined")
+        console.log("combined")
+        console.log("combined")
+        console.log("combined")
+        console.log("combined")
+        console.log("combined")
+        console.log("combined")
         console.log(combined)
+        console.log("combined")
 
       } catch (err) {
         console.error("Gagal mengambil data:", err);
@@ -381,7 +389,8 @@ export default function MonitoringPage() {
           </h1>
         </div>
         <p className="text-muted-foreground">
-          Monitoring dan kelola semua laporan yang dikirimkan. Lacak status, tindak lanjuti kasus, dan perbarui status laporan.
+          Monitoring dan kelola semua laporan yang dikirimkan. Lacak status,
+          tindak lanjuti kasus, dan perbarui status laporan.
         </p>
       </div>
 
@@ -420,7 +429,9 @@ export default function MonitoringPage() {
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
                 <SelectItem value="IN_REVIEW">In Review</SelectItem>
                 <SelectItem value="FOLLOWED-UP">Followed Up</SelectItem>
-                <SelectItem value="COMPLETED">Verifikasi Kepala Bagian Umum</SelectItem>
+                <SelectItem value="COMPLETED">
+                  Verifikasi Kepala Bagian Umum
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -457,7 +468,9 @@ export default function MonitoringPage() {
                 <TableHead>Nama Terlapor</TableHead>
                 <TableHead>Satuan Kerja</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">{role==="KABKO_KATIM"?"":"Actions"}</TableHead>
+                <TableHead className="text-right">
+                  {role === "KABKO_KATIM" ? "" : "Actions"}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -527,18 +540,18 @@ export default function MonitoringPage() {
                         )}
 
                         {/* STATUS → hanya admin */}
-                        {(role === "SUPERADMIN" ||role === "KABAG_TU") && (
+                        {(role === "SUPERADMIN" || role === "KABAG_TU") && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleChangeStatus(report)}
                           >
-                            Status
+                            Verifikasi
                           </Button>
                         )}
 
                         {/* HAPUS → hanya admin */}
-                        {(role === "SUPERADMIN") && (
+                        {role === "SUPERADMIN" && (
                           <Button
                             variant="destructive"
                             size="sm"
@@ -653,7 +666,12 @@ export default function MonitoringPage() {
               {selectedReport.type === "violation" && (
                 <div>
                   <Label className="text-muted-foreground">Deskripsi</Label>
-                  <p className="font-medium">{selectedReport.violationDesc}</p>
+                  <p className="font-medium">
+                    {selectedReport.type === "consultation"
+                      ? selectedReport.topic
+                      : selectedReport.description}
+                    {/* {selectedReport.violationDesc} */}
+                  </p>
                 </div>
               )}
               <div>
@@ -754,9 +772,7 @@ export default function MonitoringPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Verifikasi Laporan</DialogTitle>
-            <DialogDescription>
-              Tambah catatan dan dokumen
-            </DialogDescription>
+            <DialogDescription>Tambah catatan dan dokumen</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
@@ -812,15 +828,14 @@ export default function MonitoringPage() {
       <Dialog open={statusModal} onOpenChange={setStatusModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Change Status</DialogTitle>
-            <DialogDescription>
-              Update status 
-            </DialogDescription>
+            <DialogTitle>Verifikasi Laporan</DialogTitle>
+            
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="newStatus">New Status</Label>
-              <Select value={newStatus} onValueChange={setNewStatus}>
+              <Label htmlFor="newStatus">Update status</Label>
+              <DialogDescription>{selectedReport?.status === "SUBMITTED"?"Laporan belum ditindaklanjut oleh Admin":''}</DialogDescription>
+              <Select value={newStatus} onValueChange={setNewStatus} disabled={selectedReport?.status === "SUBMITTED"}>
                 <SelectTrigger id="newStatus">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -843,11 +858,15 @@ export default function MonitoringPage() {
             >
               Cancel
             </Button>
-            <Button onClick={handleStatusSubmit}
+            <Button
+              onClick={handleStatusSubmit}
               disabled={
                 newStatus !== "COMPLETED" ||
                 selectedReport?.status === "COMPLETED"
-              }>Verifikasi KABAG TU</Button>
+              }
+            >
+              Verifikasi KABAG TU
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

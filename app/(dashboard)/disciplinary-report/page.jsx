@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/lib/auth-context";
 
 import { useAuth } from "@/lib/auth-context";
 import { postDisciplineByKabkoKatim } from "../../services/postServices";

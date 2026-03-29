@@ -8,8 +8,8 @@ export async function POST(req) {
     const { email, password } = await req.json();
 
     console.log(email)
-    console.log(email)
-    console.log(email)
+    console.log(password)
+    
 
     const user = await prisma.tbl_user.findUnique({
       where: { email },
@@ -23,8 +23,8 @@ export async function POST(req) {
       }
     });
     
-    // console.log("user")
-    // console.log(user)
+    console.log("user")
+    console.log(user)
     
     if (!user) {
       return Response.json({ error: "User tidak ditemukan" }, { status: 401 });
