@@ -703,7 +703,7 @@ export default function MonitoringPage() {
                       >
                         <p className="text-sm">
                           <span className="font-medium">Catatan:</span>{" "}
-                          {fu.notes || "-"}
+                          {fu?.notes || "-"}
                         </p>
 
                         <p className="text-sm">
