@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:@localhost:3306/db_kompas_disiplin3"
+  url      = env("DATABASE_URL")
 }
 
 model tbl_user {
