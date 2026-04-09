@@ -12,3 +12,10 @@ export const patchFollowUps = async ({ id, data }) => {
    data
   });
 };
+
+export const patchDiscipline = async ({ id, data }) => {
+  
+  return api.patch(`/disciplinary-report/patchDisciplineByKabkoKatim/${id}`, {
+   data
+  });
+};

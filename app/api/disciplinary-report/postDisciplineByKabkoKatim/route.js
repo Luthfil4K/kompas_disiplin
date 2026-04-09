@@ -21,6 +21,7 @@ export async function POST(req) {
         },
         violationDesc: data.description,
         linkFile: data.linkFile?data.linkFile:"",
+        linkFileVio: data.linkFileVio?data.linkFileVio:"",
         USER:{
           connect: {id:data.userId}
         }

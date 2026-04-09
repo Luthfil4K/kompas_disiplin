@@ -77,6 +77,7 @@ export default function DisciplinaryReportPage() {
         violationType: "",
         description: "",
         linkFile: "",
+        linkFileVio:"",
       });
      
       setSubmitted(false);

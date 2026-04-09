@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useData } from "@/lib/data-context";
+
 import { useAuth } from "@/lib/auth-context";
 import { postConsultationByKabkoKatim } from "../../services/postServices";
 
@@ -24,7 +24,7 @@ export default function LegalConsultationPage() {
   if (loading) return <div>Loading...</div>;
  
 
-  const { addConsultation } = useData();
+
   const [submitted, setSubmitted] = useState(false);
   const [files, setFiles] = useState([]);
   const [formData, setFormData] = useState({

@@ -37,12 +37,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useData } from "@/lib/data-context";
 
-import { getAllDiscipline } from "../../services/getServices";
+
 import { getAllConsultation } from "../../services/getServices";
-import { postFollowUps } from "../../services/postServices"
-import { patchFollowUps } from "../../services/putServices"
+import { getAllDiscipline } from "../../services/getServices";
+import { patchDiscipline } from "../../services/putServices";
+import { patchFollowUps } from "../../services/putServices";
+import { postFollowUps } from "../../services/postServices";
 import { patchStatus } from "../../services/putServices";
 import { deleteCons } from "../../services/deleteServices";
 import { deleteVio } from "../../services/deleteServices";
@@ -81,10 +82,10 @@ export default function MonitoringPage() {
   const { user, loading } = useAuth();
 
   const role = user?.role;
-  const userLoginId= user?.id;
+  const userLoginId = user?.id;
   if (loading) return <div>Loading...</div>;
 
-  const { getAllReports, updateReportStatus, addFollowUp } = useData();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [workUnitFilter, setWorkUnitFilter] = useState("all");
@@ -96,13 +97,16 @@ export default function MonitoringPage() {
     notes: "",
     linkFile: "",
   });
+  const [submitLaporan, setSubmitLaporan] = useState({
+    linkFileVio: "",
+  });
   const [newStatus, setNewStatus] = useState("");
 
   const [dataConsultation, setDataConsultation] = useState();
   const [dataViolation, setDataViolation] = useState();
-  const [allData, setAllData] = useState()
+  const [allData, setAllData] = useState();
 
-  const allReports = getAllReports();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,9 +117,8 @@ export default function MonitoringPage() {
         setDataConsultation(cons);
         setDataViolation(vio);
 
-
-        console.log("ini cons", cons)
-        console.log("ini vio", vio)
+        console.log("ini cons", cons);
+        console.log("ini vio", vio);
 
         const mappedCons = cons.map((item) => ({
           id: item.id,
@@ -123,7 +126,7 @@ export default function MonitoringPage() {
           date: item.createdAt,
           description: item.topic,
           documents: item.linkFile ? [item.linkFile] : [],
-          nip: '',
+          nip: "",
           position: item.position,
           reportedName: item.name,
           reporterName: item.name,
@@ -148,6 +151,7 @@ export default function MonitoringPage() {
           reporterName: item.reporterName,
           topic: item.violationDesc,
           status: item.status || "submitted",
+          linkFileVio: item.linkFileVio || "",
           type: "violation",
           followUps: item.followUps,
           violationType: item.violationType,
@@ -160,23 +164,14 @@ export default function MonitoringPage() {
 
         if (role === "KABKO_KATIM") {
           filteredByRole = combined.filter(
-            (item) => item.userId === userLoginId
+            (item) => item.userId === userLoginId,
           );
         }
 
         combined.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         setAllData(filteredByRole);
-        console.log("combined")
-        console.log("combined")
-        console.log("combined")
-        console.log("combined")
-        console.log("combined")
-        console.log("combined")
-        console.log("combined")
-        console.log(combined)
-        console.log("combined")
-
+        console.log("combined");
       } catch (err) {
         console.error("Gagal mengambil data:", err);
       }
@@ -246,26 +241,24 @@ export default function MonitoringPage() {
   };
 
   const handleDelete = async (report) => {
-  try {
-    if (report.type === "consultation") {
-      await deleteCons({ id: report.id });
-    } else {
-      await deleteVio({ id: report.id });
+    try {
+      if (report.type === "consultation") {
+        await deleteCons({ id: report.id });
+      } else {
+        await deleteVio({ id: report.id });
+      }
+
+      // update UI tanpa reload
+      setAllData((prev) => prev.filter((item) => item.id !== report.id));
+
+      setSelectedReport(null);
+
+      alert("Berhasil dihapus");
+    } catch (error) {
+      console.error("Gagal delete:", error);
+      alert("Gagal menghapus data");
     }
-
-    // update UI tanpa reload
-    setAllData((prev) =>
-      prev.filter((item) => item.id !== report.id)
-    );
-
-    setSelectedReport(null);
-
-    alert("Berhasil dihapus");
-  } catch (error) {
-    console.error("Gagal delete:", error);
-    alert("Gagal menghapus data");
-  }
-};
+  };
 
   const handleFollowUpSubmit = async () => {
     if (selectedReport && followUpData.notes) {
@@ -274,13 +267,9 @@ export default function MonitoringPage() {
         userId: "1",
         type: selectedReport.type,
         consultationId:
-          selectedReport.type === "consultation"
-            ? selectedReport.id
-            : null,
+          selectedReport.type === "consultation" ? selectedReport.id : null,
         violationId:
-          selectedReport.type === "violation"
-            ? selectedReport.id
-            : null,
+          selectedReport.type === "violation" ? selectedReport.id : null,
       };
 
       let newFollowUp;
@@ -298,7 +287,6 @@ export default function MonitoringPage() {
         newFollowUp = res.data;
       }
 
-
       setAllData((prev) =>
         prev.map((item) => {
           if (item.id === selectedReport.id) {
@@ -309,14 +297,58 @@ export default function MonitoringPage() {
             };
           }
           return item;
-        })
+        }),
       );
-
 
       setSelectedReport((prev) => ({
         ...prev,
         followUps: [newFollowUp],
         isFollowUp: "1",
+      }));
+
+      setFollowUpModal(false);
+      setFollowUpData({ notes: "", linkFile: "" });
+    }
+  };
+
+  const handleSubmitLaporan = async () => {
+    if (selectedReport && submitLaporan.linkFileVio) {
+      const payload = {
+        ...submitLaporan,
+        userId: userLoginId ? userLoginId : "1",
+        type: selectedReport.type,
+        consultationId:
+          selectedReport.type === "consultation" ? selectedReport.id : null,
+        violationId:
+          selectedReport.type === "violation" ? selectedReport.id : null,
+      };
+
+      let newSubmitLaporan;
+
+      if (selectedReport.followUps?.length > 0) {
+        // UPDATE
+        const res = await patchDiscipline({
+          id: selectedReport.id,
+          data: payload,
+        });
+        newSubmitLaporan = res.data;
+      }
+
+      setAllData((prev) =>
+        prev.map((item) => {
+          if (item.id === selectedReport.id) {
+            return {
+              ...item,
+              linkFileVio: submitLaporan.linkFileVio,
+            };
+          }
+          return item;
+        }),
+      );
+
+      setSelectedReport((prev) => ({
+        ...prev,
+        linkFileVio: submitLaporan.linkFileVio,
       }));
 
       setFollowUpModal(false);
@@ -339,10 +371,8 @@ export default function MonitoringPage() {
       // 🔥 update UI tanpa reload
       setAllData((prev) =>
         prev.map((item) =>
-          item.id === selectedReport.id
-            ? { ...item, status: newStatus }
-            : item
-        )
+          item.id === selectedReport.id ? { ...item, status: newStatus } : item,
+        ),
       );
 
       setSelectedReport((prev) => ({
@@ -355,7 +385,6 @@ export default function MonitoringPage() {
       setNewStatus("");
     }
   };
-
 
   const getReporterName = (report) => {
     return report.type === "consultation"
@@ -373,9 +402,9 @@ export default function MonitoringPage() {
     return type === "consultation" ? "Konsultasi" : "Pelanggaran Disiplin";
   };
 
-  console.log("role di monitoring: ",role)
-  console.log("role di monitoring: ",role)
-  console.log("role di monitoring: ",role)
+  console.log("role di monitoring: ", role);
+  console.log("role di monitoring: ", role);
+  console.log("role di monitoring: ", role);
 
   return (
     <div>
@@ -427,7 +456,6 @@ export default function MonitoringPage() {
               <SelectContent>
                 <SelectItem value="all">Status</SelectItem>
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                <SelectItem value="IN_REVIEW">In Review</SelectItem>
                 <SelectItem value="FOLLOWED-UP">Followed Up</SelectItem>
                 <SelectItem value="COMPLETED">
                   Verifikasi Kepala Bagian Umum
@@ -509,7 +537,7 @@ export default function MonitoringPage() {
                         className={
                           report.status === "COMPLETED"
                             ? "bg-success text-success-foreground"
-                            : report.status === "IN_REVIEW"
+                            : report.status === "FOLLOWED_UP"
                               ? "bg-warning text-warning-foreground"
                               : ""
                         }
@@ -525,11 +553,11 @@ export default function MonitoringPage() {
                           size="sm"
                           onClick={() => handleViewDetails(report)}
                         >
-                          View
+                          Detail
                         </Button>
 
                         {/* VERIFIKASI → hanya admin & verifikator */}
-                        {(role === "SUPERADMIN" || role === "ADMIN") && (
+                        {/* {(role === "SUPERADMIN" || role === "ADMIN") && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -537,7 +565,7 @@ export default function MonitoringPage() {
                           >
                             Tindak Lanjut
                           </Button>
-                        )}
+                        )} */}
 
                         {/* STATUS → hanya admin */}
                         {(role === "SUPERADMIN" || role === "KABAG_TU") && (
@@ -613,7 +641,7 @@ export default function MonitoringPage() {
         open={!!selectedReport && !followUpModal && !statusModal}
         onOpenChange={() => setSelectedReport(null)}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="!max-w-7xl w-full max-h-[100vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detail Laporan </DialogTitle>
             <DialogDescription>
@@ -707,8 +735,10 @@ export default function MonitoringPage() {
                         </p>
 
                         <p className="text-sm">
-                          <span className="font-medium">Link File:</span>{" "}
-                          {fu.linkFile ? (
+                          <span className="font-medium">
+                            Unduh Template Laporan:
+                          </span>{" "}
+                          {fu?.linkFile ? (
                             <a
                               href={
                                 fu.linkFile.startsWith("http")
@@ -724,6 +754,30 @@ export default function MonitoringPage() {
                             "-"
                           )}
                         </p>
+                        {selectedReport?.linkFileVio != "" ? (
+                          <p className="text-sm">
+                            <span className="font-medium">
+                              Laporan:
+                            </span>{" "}
+                            {selectedReport?.linkFileVio ? (
+                              <a
+                                href={
+                                  selectedReport.linkFileVio.startsWith("http")
+                                    ? selectedReport.linkFileVio
+                                    : `https://${selectedReport.linkFileVio}`
+                                }
+                                target="_blank"
+                                className="text-primary hover:underline"
+                              >
+                                Lihat File
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </p>
+                        ) : (
+                          <></>
+                        )}
 
                         <p className="text-xs text-muted-foreground">
                           {formatDateWITA(fu.createdAt || fu.date)}
@@ -755,11 +809,104 @@ export default function MonitoringPage() {
                       </a>
                     ))}
                   </div>
+                  {(role === "SUPERADMIN" || role === "ADMIN") && (
+                    <div className="grid gap-4 mt-8">
+                      <div className="grid gap-2">
+                        <Label htmlFor="followUpNotes">
+                          Catatan tindak lanjut
+                        </Label>
+                        <Textarea
+                          value={followUpData.notes}
+                          onChange={(e) =>
+                            setFollowUpData((prev) => ({
+                              ...prev,
+                              notes: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="linkFile">
+                          Tautan dokumen template
+                        </Label>
+                        <Input
+                          value={followUpData.linkFile}
+                          onChange={(e) =>
+                            setFollowUpData((prev) => ({
+                              ...prev,
+                              linkFile: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {selectedReport.status === "FOLLOWED_UP" && (
+                    <div className="grid gap-4 mt-8">
+                      <div className="grid gap-2">
+                        <Label htmlFor="linkFileVio">Tautan Laporan</Label>
+                        <Input
+                          value={submitLaporan.linkFileVio}
+                          onChange={(e) =>
+                            setSubmitLaporan((prev) => ({
+                              ...prev,
+                              linkFileVio: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
           <DialogFooter>
+            {(role === "SUPERADMIN" || role === "ADMIN") && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFollowUpModal(false);
+                    setFollowUpData({ notes: "", documents: "" });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleFollowUpSubmit}
+                  disabled={
+                    !followUpData.notes ||
+                    selectedReport?.status === "COMPLETED"
+                  }
+                >
+                  Simpan Tindak Lanjut
+                </Button>
+                <Button
+                  onClick={handleSubmitLaporan}
+                  disabled={
+                    !submitLaporan.linkFileVio ||
+                    selectedReport?.status === "COMPLETED"
+                  }
+                >
+                  Simpan Laporan
+                </Button>
+              </>
+            )}
+
+            {role === "KABKO_KATIM" &&
+              selectedReport?.status === "FOLLOWED_UP" && (
+                <Button
+                  onClick={handleSubmitLaporan}
+                  disabled={
+                    !submitLaporan.linkFileVio ||
+                    selectedReport?.status === "COMPLETED"
+                  }
+                >
+                  Simpan Laporan
+                </Button>
+              )}
+
             <Button variant="outline" onClick={() => setSelectedReport(null)}>
               Close
             </Button>
@@ -829,13 +976,20 @@ export default function MonitoringPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Verifikasi Laporan</DialogTitle>
-            
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="newStatus">Update status</Label>
-              <DialogDescription>{selectedReport?.status === "SUBMITTED"?"Laporan belum ditindaklanjut oleh Admin":''}</DialogDescription>
-              <Select value={newStatus} onValueChange={setNewStatus} disabled={selectedReport?.status === "SUBMITTED"}>
+              <DialogDescription>
+                {selectedReport?.status === "SUBMITTED"
+                  ? "Laporan belum ditindaklanjut oleh Admin"
+                  : ""}
+              </DialogDescription>
+              <Select
+                value={newStatus}
+                onValueChange={setNewStatus}
+                disabled={selectedReport?.status === "SUBMITTED"}
+              >
                 <SelectTrigger id="newStatus">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>

@@ -29,7 +29,7 @@ import {
   Cell,
   ResponsiveContainer
 } from "recharts"
-import { useData } from "@/lib/data-context"
+
 
 import { getAllDiscipline } from "../../services/getServices";
 import { getAllConsultation } from "../../services/getServices";
@@ -55,13 +55,7 @@ const pieColors = [
 ]
 
 export default function EvaluationPage() {
-  const {
-    getStats,
-    getMonthlyData,
-    getViolationCategories,
-    getAllDocuments,
-    getPunishmentSummary
-  } = useData()
+
 
   const [dashboardData, setDashboardData] = useState({
     consultations: [],
@@ -186,7 +180,7 @@ export default function EvaluationPage() {
       date: item.createdAt,
     })),
   ];
-  const stats = getStats()
+
   const monthlyData = generateMonthlyData(
     dashboardData.consultations || [],
     dashboardData.violations || []
@@ -194,8 +188,7 @@ export default function EvaluationPage() {
   const violationCategories = getViolationCategoriesFromData(
     dashboardData.violations
   );
-  const documents = getAllDocuments()
-  const punishmentSummary = getPunishmentSummary()
+
 
   const statCards = [
     {

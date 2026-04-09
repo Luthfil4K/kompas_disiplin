@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useData } from "@/lib/data-context";
+
 import { useAuth } from "@/lib/auth-context";
 import { getAllDiscipline } from "../services/getServices";
 import { getAllConsultation } from "../services/getServices";
@@ -65,7 +65,7 @@ export default function HomePage() {
 
    
 
-  const { getStats } = useData();
+
   const stats = getStats();
   const { user } = useAuth();
   const filteredMenu = menuItems.filter((item) => {
