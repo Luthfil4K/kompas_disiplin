@@ -19,3 +19,9 @@ export const patchDiscipline = async ({ id, data }) => {
    data
   });
 };
+export const patchDisciplineType = async ({ id, data }) => {
+  
+  return api.patch(`/disciplinary-report/patchDisciplineType/${id}`, {
+   data
+  });
+};

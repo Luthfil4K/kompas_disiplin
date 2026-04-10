@@ -17,8 +17,17 @@ const badgeVariants = cva(
           'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
         outline:
           'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+          // 🔥 TAMBAHAN
+        ringan:
+          'border-transparent bg-yellow-100 text-yellow-800 [a&]:hover:bg-yellow-400',
+
+        sedang:
+          'border-transparent bg-orange-100 text-orange-800 [a&]:hover:bg-orange-400',
+
+        berat:
+          'border-transparent bg-red-200 text-red-900 [a&]:hover:bg-red-500',
+          },
       },
-    },
     defaultVariants: {
       variant: 'default',
     },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
 import { Eye, Search, Filter, Upload, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-
+import { patchDisciplineType } from "../../services/putServices";
 import { getAllConsultation } from "../../services/getServices";
 import { getAllDiscipline } from "../../services/getServices";
 import { patchDiscipline } from "../../services/putServices";
@@ -84,8 +85,7 @@ export default function MonitoringPage() {
   const role = user?.role;
   const userLoginId = user?.id;
   if (loading) return <div>Loading...</div>;
-
-
+const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [workUnitFilter, setWorkUnitFilter] = useState("all");
@@ -105,8 +105,17 @@ export default function MonitoringPage() {
   const [dataConsultation, setDataConsultation] = useState();
   const [dataViolation, setDataViolation] = useState();
   const [allData, setAllData] = useState();
+  const [selectedViolationType, setSelectedViolationType] = useState("");
+  const [violationTypes, setViolationTypes] = useState([]);
+  const [violationTypeId, setViolationTypeId] = useState("");
 
-
+  useEffect(() => {
+    setViolationTypes([
+      { id: "1", name: "Disiplin Ringan" },
+      { id: "2", name: "Disiplin Sedang" },
+      { id: "3", name: "Disiplin Berat" },
+    ]);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -211,6 +220,9 @@ export default function MonitoringPage() {
   );
 
   const handleViewDetails = (report) => {
+    setViolationTypeId(
+      report.type === "violation" ? report.violationType?.id || "" : "",
+    );
     setSelectedReport(report);
   };
 
@@ -261,39 +273,58 @@ export default function MonitoringPage() {
   };
 
   const handleFollowUpSubmit = async () => {
-    if (selectedReport && followUpData.notes) {
-      const payload = {
-        ...followUpData,
-        userId: "1",
-        type: selectedReport.type,
-        consultationId:
-          selectedReport.type === "consultation" ? selectedReport.id : null,
-        violationId:
-          selectedReport.type === "violation" ? selectedReport.id : null,
-      };
+    if (!selectedReport) return;
 
-      let newFollowUp;
+    try {
+      let updatedViolationType = selectedReport.violationType;
 
-      if (selectedReport.followUps?.length > 0) {
-        // UPDATE
-        const res = await patchFollowUps({
-          id: selectedReport.followUps[0].id,
-          data: payload,
+      // ✅ update violation type
+      if (selectedReport.type === "violation") {
+        await patchDisciplineType({
+          id: selectedReport.id,
+          data: {
+            violationTypeId: violationTypeId,
+          },
         });
-        newFollowUp = res.data;
-      } else {
-        // CREATE
-        const res = await postFollowUps(payload);
-        newFollowUp = res.data;
+
+        updatedViolationType = violationTypes.find(
+          (v) => v.id === violationTypeId,
+        );
       }
 
+      let newFollowUp = null;
+
+      if (followUpData.notes) {
+        const payload = {
+          ...followUpData,
+          userId: "1",
+          type: selectedReport.type,
+          consultationId:
+            selectedReport.type === "consultation" ? selectedReport.id : null,
+          violationId:
+            selectedReport.type === "violation" ? selectedReport.id : null,
+        };
+
+        if (selectedReport.followUps?.length > 0) {
+          const res = await patchFollowUps({
+            id: selectedReport.followUps[0].id,
+            data: payload,
+          });
+          newFollowUp = res.data;
+        } else {
+          const res = await postFollowUps(payload);
+          newFollowUp = res.data;
+        }
+      }
+
+      // ✅ update UI
       setAllData((prev) =>
         prev.map((item) => {
           if (item.id === selectedReport.id) {
             return {
               ...item,
-              followUps: [newFollowUp],
-              isFollowUp: "1",
+              violationType: updatedViolationType,
+              followUps: newFollowUp ? [newFollowUp] : item.followUps,
             };
           }
           return item;
@@ -302,12 +333,31 @@ export default function MonitoringPage() {
 
       setSelectedReport((prev) => ({
         ...prev,
-        followUps: [newFollowUp],
-        isFollowUp: "1",
+        violationType: updatedViolationType,
+        followUps: newFollowUp ? [newFollowUp] : prev.followUps,
       }));
 
+      // toast sukses
+      toast({
+        title: "Berhasil",
+        description: "Tindak lanjut berhasil disimpan",
+      });
+
       setFollowUpModal(false);
-      setFollowUpData({ notes: "", linkFile: "" });
+      setSelectedReport(null);
+
+      setFollowUpData({
+        notes: "",
+        linkFile: "",
+      });
+    } catch (error) {
+      console.error(error);
+
+      toast({
+        title: "Gagal",
+        description: "Terjadi kesalahan saat menyimpan",
+        variant: "destructive",
+      });
     }
   };
 
@@ -402,9 +452,21 @@ export default function MonitoringPage() {
     return type === "consultation" ? "Konsultasi" : "Pelanggaran Disiplin";
   };
 
-  console.log("role di monitoring: ", role);
-  console.log("role di monitoring: ", role);
-  console.log("role di monitoring: ", role);
+  const getViolationBadgeVariant = (report) => {
+  if (report.type !== "violation") return "secondary";
+
+  const id = report.violationType?.id;
+
+  if (id === "1") return "ringan";     // ringan
+  if (id === "2") return "sedang";       // sedang
+  if (id === "3") return "berat";   // berat
+
+  return "outline"; // fallback
+};
+
+  // console.log("role di monitoring: ", role);
+  // console.log("role di monitoring: ", role);
+  // console.log("role di monitoring: ", role);
 
   return (
     <div>
@@ -518,15 +580,23 @@ export default function MonitoringPage() {
                       {formatDateWITA(report.date)}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          report.type === "consultation"
-                            ? "secondary"
-                            : "destructive"
-                        }
-                      >
-                        {getTypeLabel(report.type)}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge
+                          variant={
+                            report.type === "consultation"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {getTypeLabel(report.type)}
+                        </Badge>
+
+                        {report.type === "violation" && (
+                          <Badge variant={getViolationBadgeVariant(report)}>
+                            {report.violationType?.name}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{getReporterName(report)}</TableCell>
                     <TableCell>{getSubjectName(report)}</TableCell>
@@ -568,7 +638,9 @@ export default function MonitoringPage() {
                         )} */}
 
                         {/* STATUS → hanya admin */}
-                        {(role === "SUPERADMIN" || role === "KABAG_TU") && (
+                        {(role === "SUPERADMIN" ||
+                          role === "KABAG_TU" ||
+                          role === "ADMIN") && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -680,15 +752,39 @@ export default function MonitoringPage() {
                 </div>
               )}
               <div>
+                {/* <Label className="text-muted-foreground">
+                  {selectedReport.type === "consultation"
+                    ? "Deskripsi Konsultasi"
+                    : "Tipe Pelanggaran"}
+                </Label> */}
                 <Label className="text-muted-foreground">
                   {selectedReport.type === "consultation"
                     ? "Deskripsi Konsultasi"
                     : "Tipe Pelanggaran"}
                 </Label>
+                {selectedReport.type === "violation" && (
+                  <Select
+                    value={violationTypeId}
+                    onValueChange={setViolationTypeId}
+                    disabled={selectedReport?.status === "COMPLETED"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih tipe pelanggaran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {violationTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
                 <p className="font-medium">
                   {selectedReport.type === "consultation"
                     ? selectedReport.topic
-                    : selectedReport.violationType?.name}
+                    : ""}
                 </p>
               </div>
               {selectedReport.type === "violation" && (
@@ -756,9 +852,7 @@ export default function MonitoringPage() {
                         </p>
                         {selectedReport?.linkFileVio != "" ? (
                           <p className="text-sm">
-                            <span className="font-medium">
-                              Laporan:
-                            </span>{" "}
+                            <span className="font-medium">Laporan:</span>{" "}
                             {selectedReport?.linkFileVio ? (
                               <a
                                 href={
@@ -862,7 +956,7 @@ export default function MonitoringPage() {
             </div>
           )}
           <DialogFooter>
-            {(role === "SUPERADMIN" || role === "ADMIN") && (
+            {role === "SUPERADMIN" && (
               <>
                 <Button
                   variant="outline"
@@ -875,10 +969,7 @@ export default function MonitoringPage() {
                 </Button>
                 <Button
                   onClick={handleFollowUpSubmit}
-                  disabled={
-                    !followUpData.notes ||
-                    selectedReport?.status === "COMPLETED"
-                  }
+                  disabled={selectedReport?.status === "COMPLETED"}
                 >
                   Simpan Tindak Lanjut
                 </Button>
@@ -890,6 +981,26 @@ export default function MonitoringPage() {
                   }
                 >
                   Simpan Laporan
+                </Button>
+              </>
+            )}
+
+            {role === "ADMIN" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFollowUpModal(false);
+                    setFollowUpData({ notes: "", documents: "" });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleFollowUpSubmit}
+                  disabled={selectedReport?.status === "COMPLETED"}
+                >
+                  Simpan Tindak Lanjut
                 </Button>
               </>
             )}
@@ -997,7 +1108,9 @@ export default function MonitoringPage() {
                   {/* <SelectItem value="SUBMITTED">Submitted</SelectItem>
                   <SelectItem value="IN_REVIEW">In Review</SelectItem>
                   <SelectItem value="FOLLOWED_UP">Followed Up</SelectItem> */}
-                  <SelectItem value="COMPLETED">Verifikasi KABAG TU</SelectItem>
+                  <SelectItem value="COMPLETED">
+                    Status Laporan Selesai
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1019,7 +1132,7 @@ export default function MonitoringPage() {
                 selectedReport?.status === "COMPLETED"
               }
             >
-              Verifikasi KABAG TU
+              Verifikasi
             </Button>
           </DialogFooter>
         </DialogContent>
