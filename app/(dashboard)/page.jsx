@@ -66,7 +66,6 @@ export default function HomePage() {
    
 
 
-  const stats = getStats();
   const { user } = useAuth();
   const filteredMenu = menuItems.filter((item) => {
     if (item.url === "/evaluation" && user?.role !== "ADMIN") {
@@ -108,7 +107,7 @@ export default function HomePage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Consultations</p>
             <p className="text-3xl font-bold text-foreground">
-              {stats.totalConsultations}
+             
             </p>
           </CardContent>
         </Card>
@@ -116,7 +115,7 @@ export default function HomePage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Total Violations</p>
             <p className="text-3xl font-bold text-foreground">
-              {stats.totalViolations}
+             
             </p>
           </CardContent>
         </Card>
@@ -124,7 +123,7 @@ export default function HomePage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">In Progress</p>
             <p className="text-3xl font-bold text-foreground">
-              {stats.inProgress}
+          
             </p>
           </CardContent>
         </Card>
@@ -132,7 +131,7 @@ export default function HomePage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Completed</p>
             <p className="text-3xl font-bold text-foreground">
-              {stats.completed}
+           
             </p>
           </CardContent>
         </Card>
